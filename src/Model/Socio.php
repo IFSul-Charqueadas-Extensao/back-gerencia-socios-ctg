@@ -31,6 +31,58 @@ class Socio{
         $this -> dancarino = $dancarino; 
         $this -> pagaInstrutor = $pagaInstrutor;
     }
+
+    public function getId(): ?int{
+        return $this->id;
+    }
+
+    public function getNome(): string{
+        return $this->nome;
+    }
+
+    public function getCpf(): string{
+        return $this->cpf;
+    }
+
+    public function getTelefone(): string{
+        return $this->telefone;
+    }
+
+    public function getFoto(): string{
+        return $this->foto;
+    }
+
+    public function getIdentidade(): string{
+        return $this->identidade;
+    }
+
+    public function getEndereco(): string{
+        return $this->endereco;
+    }
+
+    public function getDataNascimento(): DateTime{
+        return $this->dataNascimento;
+    }
+
+    public function getDataEntrada(): DateTime{
+        return $this->dataEntrada;
+    }
+
+    public function getStatus(): StatusSocio{
+        return $this->status;
+    }
+
+    public function getCategoriaId(): int{
+        return $this->categoriaId;
+    }
+
+    public function isDancarino(): bool{
+        return $this->dancarino;    
+    }
+
+    public function isPagaInstrutor(): bool{
+        return $this->pagaInstrutor;
+    }
 }
 
 ?>
