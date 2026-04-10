@@ -1,5 +1,7 @@
 <?php
 
+require_once '../enum/StatusSocio.php';
+
 class Socio{
 
     private ?int $id;
@@ -12,7 +14,7 @@ class Socio{
     private DateTime $dataNascimento;
     private DateTime $dataEntrada;
     private StatusSocio $status; //ENUM => CRIAR
-    private int $categoriaId;
+    private int $categoriaId; // categoria => PESSOA FINANCEIRO CRIAR
     private bool $dancarino;
     private bool $pagaInstrutor;
 
