@@ -1,6 +1,9 @@
 <?php
+namespace Model;
 
-require_once '../enum/StatusSocio.php';
+use enum\StatusSocio;
+
+
 
 class Socio{
 
@@ -84,6 +87,22 @@ class Socio{
 
     public function isPagaInstrutor(): bool{
         return $this->pagaInstrutor;
+    }
+
+    public function setNome(string $nome): void {
+        $this->nome = $nome;
+    }
+
+    public function setCpf(string $cpf): void {
+        $this->cpf = $cpf;
+    }
+
+    public function setTelefone(string $telefone): void {
+        $this->telefone = $telefone;    
+    }
+
+    public function setEndereco(string $endereco): void {
+        $this->endereco = $endereco;
     }
 }
 
