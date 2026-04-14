@@ -1,0 +1,25 @@
+# ================================
+# RELATORIOS HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###x'
+GET http://localhost:8000/api/relatorios/socios
+Accept: application/json
+
+###
+
+# GET RELATORIO FINANCEIRO - SUCCESS
+GET http://localhost:8000/api/relatorios/financeiro
+Accept: application/json
+
+###
+
+# GET RELATORIO INEXISTENTE - NOT FOUND
+GET http://localhost:8000/api/relatorios/inexistente
+Accept: application/json
+
+###

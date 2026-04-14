@@ -12,10 +12,13 @@ use Error\APIException;
 
 class Database
 {
-	// para simplificar, vamos usar um banco SQLite
-	// e vamos definir o caminho do banco aqui, por simplicidade
-	private static string $database = __DIR__ . '/database.sqlite';
-
+	// Configurações para acesso ao banco MySQL
+	private static string $host = 'localhost';
+	private static string $dbname = 'ctg'; // Mude para o nome do seu banco de dados
+	private static string $user = 'ctg_user'; // Mude para o seu usuário do banco
+	private static string $password = '1234'; // Mude para a sua senha do banco
+	private static string $port = '3306'; // Porta padrão do MySQL
+	
 	// Instância única da conexão (Singleton)
 	private static ?PDO $connection = null;
 
@@ -33,15 +36,12 @@ class Database
 		if (self::$connection === null) {
 			try {
 				// Cria a conexão uma única vez
-				$dsn = "sqlite:" . self::$database;
-				self::$connection = new PDO($dsn);
+				$dsn = "mysql:host=" . self::$host . ";port=" . self::$port . ";dbname=" . self::$dbname . ";charset=utf8mb4";
+				self::$connection = new PDO($dsn, self::$user, self::$password);
 
 				// Configurações da conexão para gerar exceções e retornar arrays associativos
 				self::$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 				self::$connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
-				// Ativa as chaves estrangeiras no SQLite
-				self::$connection->exec("PRAGMA foreign_keys = ON;");
 			} catch (PDOException $e) {
 				throw new APIException("Erro ao conectar ao banco de dados: " . $e->getMessage(), 500);	
 			}
