@@ -35,6 +35,7 @@ CREATE DATABASE ctg;
 CREATE USER 'ctg_user'@'localhost' IDENTIFIED BY '1234';
 GRANT ALL PRIVILEGES ON ctg.* TO 'ctg_user'@'localhost';
 FLUSH PRIVILEGES;
+EXIT;
 ```
 
 ---
@@ -42,7 +43,7 @@ FLUSH PRIVILEGES;
 ### 4. Importar o banco
 
 ```bash
-mysql -u ctg_user -p ctg < database/schema.sql
+mysql -u ctg_user -p ctg < src/Database/schema.sql
 ```
 
 ---
@@ -52,7 +53,7 @@ mysql -u ctg_user -p ctg < database/schema.sql
 Na raiz do projeto:
 
 ```bash
-php -S localhost:8000 index.php
+php -S localhost:8000
 ```
 
 ---
