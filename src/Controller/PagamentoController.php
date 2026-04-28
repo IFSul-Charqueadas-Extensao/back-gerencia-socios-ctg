@@ -35,6 +35,7 @@ class PagamentoController
                     }
 
                     Response::send($pagamento);
+                    return;
                 }
 
                 Response::send($this->service->findAll());

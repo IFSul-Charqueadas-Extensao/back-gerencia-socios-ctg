@@ -1,0 +1,72 @@
+# ================================
+# MENSALIDADES HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL MENSALIDADES - SUCCESS
+GET http://localhost:8000/api/mensalidades
+Accept: application/json
+
+###
+
+# POST CREATE MENSALIDADE - SUCCESS
+POST http://localhost:8000/api/mensalidades
+Content-Type: application/json
+
+{
+	"socio_id": 1,
+	"dependente_id": null,
+	"mes": 7,
+	"ano": 2026,
+	"valor": 150.00,
+	"data_vencimento": "2026-08-10",
+	"status": "Pendente"
+}
+
+###
+
+# GET MENSALIDADE SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/mensalidades/13
+Accept: application/json
+
+###
+
+# PUT UPDATE MENSALIDADE - SUCCESS
+PUT http://localhost:8000/api/mensalidades/13
+Content-Type: application/json
+
+{
+	"socio_id": 1,
+	"dependente_id": null,
+	"mes": 7,
+	"ano": 2026,
+	"valor": 200.00,
+	"data_vencimento": "2026-08-10",
+	"status": "Pago"
+}
+
+###
+
+# GET UPDATED MENSALIDADE - SUCCESS
+GET http://localhost:8000/api/mensalidades/13
+Accept: application/json
+
+###
+
+# DELETE MENSALIDADE - SUCCESS
+DELETE http://localhost:8000/api/mensalidades/13
+Accept: application/json
+
+###
+
+# GET DELETED MENSALIDADE - NOT FOUND
+GET http://localhost:8000/api/mensalidades/13
+Accept: application/json
+
+###
+

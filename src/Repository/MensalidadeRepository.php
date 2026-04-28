@@ -105,7 +105,18 @@ class MensalidadeRepository
 
         $stmt->execute();
 
-        return $mensalidade;
+        // Get the last inserted ID and return a new instance with it
+        $lastId = $this->connection->lastInsertId();
+        return new Mensalidade(
+            socioId: $mensalidade->getSocioId(),
+            dependenteId: $mensalidade->getDependenteId(),
+            mes: $mensalidade->getMes(),
+            ano: $mensalidade->getAno(),
+            valor: $mensalidade->getValor(),
+            dataVencimento: $mensalidade->getDataVencimento(),
+            status: $mensalidade->getStatus(),
+            id: (int)$lastId
+        );
     }
 
     public function update(Mensalidade $mensalidade): void

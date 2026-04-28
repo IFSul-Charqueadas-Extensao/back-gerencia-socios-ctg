@@ -1,0 +1,68 @@
+# ================================
+# PAGAMENTOS HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL PAGAMENTOS - SUCCESS
+GET http://localhost:8000/api/pagamentos
+Accept: application/json
+
+###
+
+# POST CREATE PAGAMENTO - SUCCESS
+POST http://localhost:8000/api/pagamentos
+Content-Type: application/json
+
+{
+	"mensalidade_id": 8,
+	"data_pagamento": "2026-05-12",
+	"forma_pagamento": "Cartao",
+	"valor_pago": 150.00,
+	"multa_juros_aplicados": 0
+}
+
+###
+
+# GET PAGAMENTO SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/pagamentos/4
+Accept: application/json
+
+###
+
+# PUT UPDATE PAGAMENTO - SUCCESS
+PUT http://localhost:8000/api/pagamentos/4
+Content-Type: application/json
+
+{
+	"mensalidade_id": 8,
+	"data_pagamento": "2026-05-12",
+	"forma_pagamento": "Dinheiro",
+	"valor_pago": 150.00,
+	"multa_juros_aplicados": 5
+}
+
+###
+
+# GET UPDATED PAGAMENTO - SUCCESS
+GET http://localhost:8000/api/pagamentos/4
+Accept: application/json
+
+###
+
+# DELETE PAGAMENTO - SUCCESS
+DELETE http://localhost:8000/api/pagamentos/4
+Accept: application/json
+
+###
+
+# GET DELETED PAGAMENTO - NOT FOUND
+GET http://localhost:8000/api/pagamentos/999
+Accept: application/json
+
+###
+

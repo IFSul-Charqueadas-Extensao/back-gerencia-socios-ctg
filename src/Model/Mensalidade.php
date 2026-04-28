@@ -3,8 +3,9 @@
 namespace Model;
 
 use DateTime;
+use JsonSerializable;
 
-class Mensalidade {
+class Mensalidade implements JsonSerializable {
 
     private ?int $id;
     private int $socioId;
@@ -77,5 +78,18 @@ class Mensalidade {
 
     public function setDataVencimento(DateTime $dataVencimento): void {
         $this->dataVencimento = $dataVencimento;
+    }
+
+    public function jsonSerialize(): mixed {
+        return [
+            'id' => $this->id,
+            'socio_id' => $this->socioId,
+            'dependente_id' => $this->dependenteId,
+            'mes' => $this->mes,
+            'ano' => $this->ano,
+            'valor' => $this->valor,
+            'status' => $this->status,
+            'data_vencimento' => $this->dataVencimento->format('Y-m-d')
+        ];
     }
 }

@@ -1,0 +1,81 @@
+# ================================
+# SOCIOS HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL SOCIOS - SUCCESS
+GET http://localhost:8000/api/socios
+Accept: application/json
+
+###
+
+# POST CREATE SOCIO - SUCCESS
+POST http://localhost:8000/api/socios
+Content-Type: application/json
+
+{
+	"nome": "Teste Silva",
+	"cpf": "999.999.999-99",
+	"telefone": "(11) 99999-9999",
+	"foto": "http://example.com/foto.jpg",
+	"identidade": "MG-99.999.999",
+	"endereco": "Rua Teste, 999",
+	"data_nascimento": "1990-04-15",
+	"data_entrada": "2026-04-28",
+	"status": "Ativo",
+	"categoria_id": 3,
+	"dancarino": true,
+	"paga_instrutor": false
+}
+
+###
+
+# GET SOCIO SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/socios/6
+Accept: application/json
+
+###
+
+# PUT UPDATE SOCIO - SUCCESS
+PUT http://localhost:8000/api/socios/6
+Content-Type: application/json
+
+{
+	"nome": "Teste Silva Atualizado",
+	"cpf": "999.999.999-99",
+	"telefone": "(11) 98888-8888",
+	"foto": "http://example.com/foto2.jpg",
+	"identidade": "MG-99.999.999",
+	"endereco": "Rua Nova, 456",
+	"data_nascimento": "1990-04-15",
+	"data_entrada": "2026-04-28",
+	"status": "Ativo",
+	"categoria_id": 3,
+	"dancarino": true,
+	"paga_instrutor": true
+}
+
+###
+
+# GET UPDATED SOCIO - SUCCESS
+GET http://localhost:8000/api/socios/6
+Accept: application/json
+
+###
+
+# DELETE SOCIO - SUCCESS
+DELETE http://localhost:8000/api/socios/6
+Accept: application/json
+
+###
+
+# GET DELETED SOCIO - NOT FOUND
+GET http://localhost:8000/api/socios/6
+Accept: application/json
+
+###

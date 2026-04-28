@@ -109,7 +109,16 @@ class PagamentoRepository
 
         $stmt->execute();
 
-        return $pagamento;
+        // Get the last inserted ID and return a new instance with it
+        $lastId = $this->connection->lastInsertId();
+        return new Pagamento(
+            mensalidadeId: $pagamento->getMensalidadeId(),
+            dataPagamento: $pagamento->getDataPagamento(),
+            formaPagamento: $pagamento->getFormaPagamento(),
+            valorPago: $pagamento->getValorPago(),
+            multaJurosAplicados: $pagamento->getMultaJurosAplicados(),
+            id: (int)$lastId
+        );
     }
 
     public function update(Pagamento $pagamento): void

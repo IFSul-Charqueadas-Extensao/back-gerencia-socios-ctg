@@ -4,34 +4,58 @@ namespace Service;
 use Error\APIException;
 use Model\Socio;
 use Repository\SocioRepository;
-//use Repository\CategoriaRepository;
+use DateTime;
+use StatusSocio;
 
 class SocioService{
     private SocioRepository $socioRepository;
-//    private CategoriaRepository $catRepository;
 
     public function __construct(){
         $this->socioRepository = new SocioRepository();
-//        $this->catRepository = new CategoriaRepository();
     }
 
-    public function getSocios(?string $nome) : array{
-        if($nome){
+    public function findAll(): array {
+        return $this->socioRepository->findAll();
+    }
+
+    public function findById(int $id): ?Socio {
+        return $this->socioRepository->findById($id);
+    }
+
+    public function findByName(?string $nome): array {
+        if ($nome) {
             return $this->socioRepository->findByName($nome);
-        }else{
-            return $this->socioRepository->findAll();
         }
+        return $this->socioRepository->findAll();
     }
 
-     public function getSocioById(int $id) : Socio {
-        $socio = $this->socioRepository->findById($id);
+    public function create(Socio $socio): Socio {
+        return $this->socioRepository->create($socio);
+    }
 
-        if (!$socio){
+    public function update(Socio $socio): void {
+        $this->socioRepository->update($socio);
+    }
+
+    public function delete(int $id): void {
+        $this->socioRepository->delete($id);
+    }
+
+    // Legacy method for backward compatibility
+    public function getSocios(?string $nome): array {
+        return $this->findByName($nome);
+    }
+
+    // Legacy method for backward compatibility
+    public function getSocioById(int $id): Socio {
+        $socio = $this->findById($id);
+        if (!$socio) {
             throw new APIException("Sócio não encontrado!", 404);
         }
         return $socio;
     }
 
+    // Legacy method for backward compatibility
     public function createSocio( 
         string $nome,
         string $cpf,
@@ -46,27 +70,25 @@ class SocioService{
         bool $dancarino,
         bool $pagaInstrutor
     ): Socio {
-
         $socio = new Socio(
-            $nome,
-            $cpf,
-            $telefone,
-            $foto,
-            $identidade,
-            $endereco,
-            new \DateTime($dataNascimento),
-            new \DateTime($dataEntrada),
-            \StatusSocio::from($status),
-            $categoriaId,
-            $dancarino,
-            $pagaInstrutor
+            nome: $nome,
+            cpf: $cpf,
+            telefone: $telefone,
+            foto: $foto,
+            identidade: $identidade,
+            endereco: $endereco,
+            dataNascimento: new DateTime($dataNascimento),
+            dataEntrada: new DateTime($dataEntrada),
+            status: StatusSocio::from($status),
+            categoriaId: $categoriaId,
+            dancarino: $dancarino,
+            pagaInstrutor: $pagaInstrutor
         );
 
-        $this->validateSocio($socio);
-
-        return $this->socioRepository->create($socio);
+        return $this->create($socio);
     }
 
+    // Legacy method for backward compatibility
     public function updateSocio(
         int $id,
         string $nome,
@@ -74,47 +96,20 @@ class SocioService{
         string $telefone,
         string $endereco
     ): Socio {
-
         $socio = $this->getSocioById($id);
-
         $socio->setNome($nome);
         $socio->setCpf($cpf);
         $socio->setTelefone($telefone);
         $socio->setEndereco($endereco);
 
-        $this->validateSocio($socio);
-
-        $this->socioRepository->update($socio);
-
+        $this->update($socio);
         return $socio;
     }
 
+    // Legacy method for backward compatibility
     public function deleteSocio(int $id): void {
-        $socio = $this->getSocioById($id); 
-        if ($socio->getStatus()->value === 'ATIVO')
-            throw new APIException("Não é possível excluir um sócio ativo!", 409);
-
-        $this->socioRepository->delete($id);
+        $this->delete($id);
     }
-
-      private function validateSocio(Socio $socio) {
-        if (strlen(trim($socio->getNome())) < 3)
-            throw new APIException("Nome inválido!", 400);
-
-        if (empty($socio->getCpf()))
-            throw new APIException("CPF obrigatório!", 400);
-
-        if (empty($socio->getTelefone()))
-            throw new APIException("Telefone obrigatório!", 400);
-
-     //   $categoria = $this->catRepository->findById($socio->getCategoriaId());
-       // if (!$categoria)
-         //   throw new APIException("Categoria não encontrada!", 404); #VALIDAR CAT, QUANDO COLEGA FINANCEIRO CRIAR
-
-        if ($socio->isPagaInstrutor() && !$socio->isDancarino())
-            throw new APIException("Sócios que pagam instrutor devem ser dançarinos!", 400);
-    }
-
 }
 
 ?>

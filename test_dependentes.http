@@ -1,0 +1,79 @@
+# ================================
+# DEPENDENTES HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL DEPENDENTES - SUCCESS
+GET http://localhost:8000/api/dependentes
+Accept: application/json
+
+###
+
+# POST CREATE DEPENDENTE - SUCCESS
+POST http://localhost:8000/api/dependentes
+Content-Type: application/json
+
+{
+	"socio_titular_id": 1,
+	"nome_completo": "Rafael Silva",
+	"cpf": "444.555.666-00",
+	"telefone": "(11) 94444-4444",
+	"identidade": "MG-44.555.666",
+	"endereco": "Rua das Flores, 123",
+	"data_nascimento": "2018-07-20",
+	"data_entrada": "2026-04-01",
+	"categoria_id": 1,
+	"dancarino": true,
+	"paga_instrutor": false
+}
+
+###
+
+# GET DEPENDENTE SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/dependentes/4
+Accept: application/json
+
+###
+
+# PUT UPDATE DEPENDENTE - SUCCESS
+PUT http://localhost:8000/api/dependentes/4
+Content-Type: application/json
+
+{
+	"socio_titular_id": 1,
+	"nome_completo": "Rafael Silva Atualizado",
+	"cpf": "444.555.666-00",
+	"telefone": "(11) 93333-3333",
+	"identidade": "MG-44.555.666",
+	"endereco": "Rua Nova, 456",
+	"data_nascimento": "2018-07-20",
+	"data_entrada": "2026-04-01",
+	"categoria_id": 2,
+	"dancarino": true,
+	"paga_instrutor": true
+}
+
+###
+
+# GET UPDATED DEPENDENTE - SUCCESS
+GET http://localhost:8000/api/dependentes/4
+Accept: application/json
+
+###
+
+# DELETE DEPENDENTE - SUCCESS
+DELETE http://localhost:8000/api/dependentes/4
+Accept: application/json
+
+###
+
+# GET DELETED DEPENDENTE - NOT FOUND
+GET http://localhost:8000/api/dependentes/4
+Accept: application/json
+
+###

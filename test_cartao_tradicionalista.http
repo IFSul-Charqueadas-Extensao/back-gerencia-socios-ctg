@@ -1,0 +1,67 @@
+# ================================
+# CARTAO TRADICIONALISTA HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL CARTOES TRADICIONALISTAS - SUCCESS
+GET http://localhost:8000/api/cartao-tradicionalista
+Accept: application/json
+
+###
+
+# POST CREATE CARTAO TRADICIONALISTA - SUCCESS
+POST http://localhost:8000/api/cartao-tradicionalista
+Content-Type: application/json
+
+{
+	"socio_id": 3,
+	"dependente_id": null,
+	"data_solicitacao": "2026-04-10",
+	"pago": false,
+	"valor": 50.00
+}
+
+###
+
+# GET CARTAO SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/cartao-tradicionalista/5
+Accept: application/json
+
+###
+
+# PUT UPDATE CARTAO TRADICIONALISTA - SUCCESS
+PUT http://localhost:8000/api/cartao-tradicionalista/5
+Content-Type: application/json
+
+{
+	"socio_id": 3,
+	"dependente_id": null,
+	"data_solicitacao": "2026-04-10",
+	"pago": true,
+	"valor": 50.00
+}
+
+###
+
+# GET UPDATED CARTAO - SUCCESS
+GET http://localhost:8000/api/cartao-tradicionalista/5
+Accept: application/json
+
+###
+
+# DELETE CARTAO TRADICIONALISTA - SUCCESS
+DELETE http://localhost:8000/api/cartao-tradicionalista/5
+Accept: application/json
+
+###
+
+# GET DELETED CARTAO - NOT FOUND
+GET http://localhost:8000/api/cartao-tradicionalista/5
+Accept: application/json
+
+###

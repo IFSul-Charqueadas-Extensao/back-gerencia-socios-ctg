@@ -3,8 +3,9 @@
 namespace Model;
 
 use DateTime;
+use JsonSerializable;
 
-class Pagamento {
+class Pagamento implements JsonSerializable {
 
     private ?int $id;
     private int $mensalidadeId;
@@ -63,5 +64,16 @@ class Pagamento {
 
     public function setMultaJurosAplicados(float $multaJurosAplicados): void {
         $this->multaJurosAplicados = $multaJurosAplicados;
+    }
+
+    public function jsonSerialize(): mixed {
+        return [
+            'id' => $this->id,
+            'mensalidade_id' => $this->mensalidadeId,
+            'data_pagamento' => $this->dataPagamento->format('Y-m-d'),
+            'forma_pagamento' => $this->formaPagamento,
+            'valor_pago' => $this->valorPago,
+            'multa_juros_aplicados' => $this->multaJurosAplicados
+        ];
     }
 }

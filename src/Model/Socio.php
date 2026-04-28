@@ -1,11 +1,11 @@
 <?php
 namespace Model;
 
-use enum\StatusSocio;
+use DateTime;
+use JsonSerializable;
+use StatusSocio;
 
-
-
-class Socio{
+class Socio implements JsonSerializable {
 
     private ?int $id;
     private string $nome;
@@ -16,12 +16,26 @@ class Socio{
     private string $endereco;
     private DateTime $dataNascimento;
     private DateTime $dataEntrada;
-    private StatusSocio $status; //ENUM => CRIAR
-    private int $categoriaId; // categoria => PESSOA FINANCEIRO CRIAR
+    private StatusSocio $status;
+    private int $categoriaId;
     private bool $dancarino;
     private bool $pagaInstrutor;
 
-    public function __construct(string $nome, string $cpf, string $telefone,string $foto,string $identidade, string $endereco, DateTime $dataNascimento, DateTime $dataEntrada,StatusSocio $status,int $categoriaId, bool $dancarino, bool $pagaInstrutor,?int $id=null){
+    public function __construct(
+        string $nome,
+        string $cpf,
+        string $telefone,
+        string $foto,
+        string $identidade,
+        string $endereco,
+        DateTime $dataNascimento,
+        DateTime $dataEntrada,
+        StatusSocio $status,
+        int $categoriaId,
+        bool $dancarino,
+        bool $pagaInstrutor,
+        ?int $id = null
+    ){
         $this->id = $id;
         $this -> nome = $nome;
         $this -> cpf = $cpf;
@@ -103,6 +117,24 @@ class Socio{
 
     public function setEndereco(string $endereco): void {
         $this->endereco = $endereco;
+    }
+
+    public function jsonSerialize(): mixed {
+        return [
+            'id' => $this->id,
+            'nome' => $this->nome,
+            'cpf' => $this->cpf,
+            'telefone' => $this->telefone,
+            'foto' => $this->foto,
+            'identidade' => $this->identidade,
+            'endereco' => $this->endereco,
+            'data_nascimento' => $this->dataNascimento->format('Y-m-d'),
+            'data_entrada' => $this->dataEntrada->format('Y-m-d'),
+            'status' => $this->status->value,
+            'categoria_id' => $this->categoriaId,
+            'dancarino' => $this->dancarino,
+            'paga_instrutor' => $this->pagaInstrutor
+        ];
     }
 }
 

@@ -35,6 +35,7 @@ class MensalidadeController
                     }
 
                     Response::send($mensalidade);
+                    return;
                 }
 
                 Response::send($this->service->findAll());

@@ -1,0 +1,63 @@
+# ================================
+# CATEGORIAS HTTP TESTS
+# ================================
+
+
+# GET / - API ENDPOINTS
+GET http://localhost:8000/api/
+
+###
+
+# GET ALL CATEGORIAS - SUCCESS
+GET http://localhost:8000/api/categorias
+Accept: application/json
+
+###
+
+# POST CREATE CATEGORIA - SUCCESS
+POST http://localhost:8000/api/categorias
+Content-Type: application/json
+
+{
+	"nome": "Sênior",
+	"valor_sociedade": 120.00,
+	"valor_instrutor": 60.00
+}
+
+###
+
+# GET CATEGORIA SPECIFIC - SUCCESS (update with ID from POST)
+GET http://localhost:8000/api/categorias/5
+Accept: application/json
+
+###
+
+# PUT UPDATE CATEGORIA - SUCCESS
+PUT http://localhost:8000/api/categorias/5
+Content-Type: application/json
+
+{
+	"nome": "Sênior Ativo",
+	"valor_sociedade": 130.00,
+	"valor_instrutor": 65.00
+}
+
+###
+
+# GET UPDATED CATEGORIA - SUCCESS
+GET http://localhost:8000/api/categorias/5
+Accept: application/json
+
+###
+
+# DELETE CATEGORIA - SUCCESS
+DELETE http://localhost:8000/api/categorias/5
+Accept: application/json
+
+###
+
+# GET DELETED CATEGORIA - NOT FOUND
+GET http://localhost:8000/api/categorias/5
+Accept: application/json
+
+###
