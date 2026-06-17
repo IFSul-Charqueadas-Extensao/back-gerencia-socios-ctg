@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Se a requisição NÃO for para um arquivo (-f) ou pasta (-d) que exista
+# de verdade, encaminha tudo para o index.php, que faz o roteamento da API.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]

@@ -1,4 +1,15 @@
 <?php
+// --- CONFIGURAÇÃO DE CORS (Deve vir antes de qualquer outra lógica) ---
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+// Trata a requisição de Preflight (OPTIONS) do navegador
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Retorna o status 200 imediatamente e encerra o script sem processar nada mais
+    http_response_code(200);
+    exit();
+}
+// ----------------------------------------------------------------------
 
 // executa as configurações iniciais (autoload, tratamento de erros etc)
 require_once 'src/config.php';

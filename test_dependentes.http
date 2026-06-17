@@ -22,10 +22,9 @@ Content-Type: application/json
 	"socio_titular_id": 1,
 	"nome_completo": "Rafael Silva",
 	"cpf": "444.555.666-00",
+	"telefone": "(11) 94444-4444",
 	"foto": "",
 	"data_nascimento": "2018-07-20",
-	"data_entrada": "2026-04-01",
-	"categoria": 1,
 	"dancarino": true
 }
 
@@ -45,10 +44,9 @@ Content-Type: application/json
 	"socio_titular_id": 1,
 	"nome_completo": "Rafael Silva Atualizado",
 	"cpf": "444.555.666-00",
+	"telefone": "(11) 94444-4444",
 	"data_nascimento": "2018-07-20",
-	"data_entrada": "2026-04-01",
-	"categoria": 2,
-	"dancarino": true,
+	"dancarino": true
 }
 
 ###
