@@ -4,8 +4,7 @@ CREATE TABLE `socios` (
   `telefone` varchar(255),
   `cpf` varchar(255) UNIQUE,
   `email` varchar(255),
-  `foto` blob,
-  `identidade` varchar(255),
+  `foto` LONGTEXT,
   `endereco` text,
   `data_nascimento` date,
   `data_entrada` date,
@@ -21,8 +20,7 @@ CREATE TABLE `dependentes` (
   `socio_titular_id` integer NOT NULL,
   `nome_completo` varchar(255),
   `cpf` varchar(255),
-  `telefone` varchar(255),
-  `foto` blob,
+  `foto` LONGTEXT,
   `data_nascimento` date,
   `dancarino` boolean DEFAULT false
 );

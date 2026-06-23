@@ -15,7 +15,6 @@ class Socio implements JsonSerializable {
     private string $email;
     private string $telefone;
     private string $foto;
-    private string $identidade;
     private Endereco $endereco;
     private DateTime $dataNascimento;
     private DateTime $dataEntrada;
@@ -30,14 +29,12 @@ class Socio implements JsonSerializable {
 
     private ?CartaoTrad $cartaoTrad = null;
 
-
     public function __construct(
         string $nome,
         string $cpf,
         string $telefone,
         string $email,
         string $foto,
-        string $identidade,
         Endereco $endereco,
         DateTime $dataNascimento,
         DateTime $dataEntrada,
@@ -53,7 +50,6 @@ class Socio implements JsonSerializable {
         $this->telefone = $telefone;
         $this->email = $email;
         $this->foto = $foto;
-        $this->identidade = $identidade;
         $this->endereco = $endereco;
         $this->dataNascimento = $dataNascimento;
         $this->dataEntrada = $dataEntrada;
@@ -89,10 +85,6 @@ class Socio implements JsonSerializable {
 
     public function getFoto(): string {
         return $this->foto;
-    }
-
-    public function getIdentidade(): string {
-        return $this->identidade;
     }
 
     public function getEndereco(): Endereco {
@@ -183,7 +175,6 @@ class Socio implements JsonSerializable {
             'email' => $this->email,
             'telefone' => $this->telefone,
             'foto' => $this->foto,
-            'identidade' => $this->identidade,
             'endereco' => $this->endereco, // já serializa automático
             'data_nascimento' => $this->dataNascimento->format('Y-m-d'),
             'data_entrada' => $this->dataEntrada->format('Y-m-d'),

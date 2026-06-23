@@ -27,18 +27,18 @@ INSERT INTO categorias (id, nome, valor_sociedade, valor_instrutor) VALUES
 (4, 'Instrutor', 150.00, 0.00);
 
 -- Insert Socios
-INSERT INTO socios (id, nome_completo, cpf, telefone, email, foto, identidade, endereco, data_nascimento, data_entrada, categoria_id, status, dancarino, paga_instrutor) VALUES
-(1, 'João Silva', '123.456.789-00', '(11) 99999-9999','joao@gmail.com', NULL, 'MG-12.345.678', 'Rua das Flores, 123', '1990-04-15', '2026-01-15', 3, 'Ativo', 1, 0),
-(2, 'Maria Santos', '987.654.321-00', '(11) 98888-8888', 'maria@gmail.com', NULL, 'SP-98.765.432', 'Avenida Principal, 456', '1985-06-20', '2026-02-01', 3, 'Ativo', 1, 1),
-(3, 'Pedro Oliveira', '456.789.123-00', '(11) 97777-7777','pedro@gmail.com', NULL, 'RJ-45.678.901', 'Rua Central, 789', '2010-03-10', '2026-02-15', 1, 'Ativo', 1, 0),
-(4, 'Ana Costa', '789.123.456-00', '(11) 96666-6666','ana@gmail.com', NULL, 'MG-78.901.234', 'Travessa Lateral, 321', '2000-08-22', '2026-03-01', 2, 'Ativo', 1, 1),
-(5, 'Carlos Ferreira', '321.654.987-00', '(11) 95555-5555','carlos@gmail.com', NULL, 'SP-32.165.498', 'Rua Secundária, 654', '1995-11-30', '2026-03-15', 3, 'Inativo', 0, 0);
+INSERT INTO socios (id, nome_completo, cpf, telefone, email, foto, endereco, data_nascimento, data_entrada, categoria_id, status, dancarino, paga_instrutor) VALUES
+(1, 'João Silva', '476.457.130-70', '(11) 99999-9999','joao@gmail.com', NULL, 'Rua das Flores, 123', '1990-04-15', '2026-01-15', 3, 'Ativo', 1, 0),
+(2, 'Maria Santos', '331.410.940-71', '(11) 98888-8888', 'maria@gmail.com', NULL, 'Avenida Principal, 456', '1985-06-20', '2026-02-01', 3, 'Ativo', 1, 1),
+(3, 'Pedro Oliveira', '581.281.230-68', '(11) 97777-7777','pedro@gmail.com', NULL, 'Rua Central, 789', '2010-03-10', '2026-02-15', 1, 'Ativo', 1, 0),
+(4, 'Ana Costa', '695.991.870-75', '(11) 96666-6666','ana@gmail.com', NULL, 'Travessa Lateral, 321', '2000-08-22', '2026-03-01', 2, 'Ativo', 1, 1),
+(5, 'Carlos Ferreira', '850.182.530-10', '(11) 95555-5555','carlos@gmail.com', NULL, 'Rua Secundária, 654', '1995-11-30', '2026-03-15', 3, 'Inativo', 0, 0);
 
 -- Insert Dependentes
-INSERT INTO dependentes (id, socio_titular_id, nome_completo, cpf, telefone, foto, data_nascimento, dancarino) VALUES
-(1, 1, 'Lucas Silva', '111.222.333-00', '(11) 90000-0001', NULL, '2012-05-10', 1),
-(2, 2, 'Julia Santos', '222.333.444-00', '(11) 90000-0002', NULL, '2015-07-25', 1),
-(3, 4, 'Felipe Costa', '333.444.555-00', '(11) 90000-0003', NULL, '2008-09-12', 1);
+INSERT INTO dependentes (id, socio_titular_id, nome_completo, cpf, foto, data_nascimento, data_entrada, categoria_id, dancarino) VALUES
+(1, 1, 'Lucas Silva', '406.024.440-63', NULL, '2012-05-10', '2026-01-15', 1, 1),
+(2, 2, 'Julia Santos', '582.050.510-70', NULL, '2015-07-25', '2026-02-01', 1, 1),
+(3, 4, 'Felipe Costa', '613.147.770-17', NULL, '2008-09-12', '2026-03-01', 2, 1);
 
 -- Insert Mensalidades
 INSERT INTO mensalidades (id, socio_id, dependente_id, mes, ano, valor, status, data_vencimento) VALUES
