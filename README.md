@@ -15,7 +15,29 @@ cd <nome-do-projeto>
 
 ---
 
-### 2. Configurar o banco de dados
+### 2. Configurar as variáveis de ambiente
+
+Copie o arquivo de exemplo e preencha com as suas credenciais locais:
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` com os valores do seu ambiente:
+
+```ini
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=ctg
+DB_USER=ctg_user
+DB_PASSWORD=1234
+```
+
+> O arquivo `.env` nunca deve ser commitado — ele já está no `.gitignore`.
+
+---
+
+### 3. Configurar o banco de dados
 
 Acesse o MySQL:
 
@@ -31,7 +53,7 @@ CREATE DATABASE ctg;
 
 ---
 
-### 3. Criar usuário
+### 4. Criar usuário
 
 ```sql
 CREATE USER 'ctg_user'@'localhost' IDENTIFIED BY '1234';
@@ -42,13 +64,13 @@ EXIT;
 
 ---
 
-### 4. Importar o banco
+### 5. Importar o banco
 
 ```bash
 mysql -u ctg_user -p ctg < src/Database/schema.sql
 ```
 
-### 5. Popular banco de dados (PARA TESTES!)
+### 6. Popular banco de dados (PARA TESTES!)
 
 Execute no terminal
 ```bash
@@ -67,8 +89,10 @@ mysql -u ctg_user -p1234 ctg < src/Database/cleanup.sql
 Na raiz do projeto:
 
 ```bash
-php -S localhost:8000
+php -S localhost:8000 index.php
 ```
+
+> O parâmetro `index.php` é o router — sem ele, as rotas `/api/...` não funcionam localmente.
 
 ---
 

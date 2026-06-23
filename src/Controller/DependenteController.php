@@ -7,7 +7,6 @@ use Http\Request;
 use Http\Response;
 use Model\Dependente;
 use Service\DependenteService;
-use Util\CategoriaSocio;
 use DateTime;
 
 class DependenteController
@@ -48,11 +47,10 @@ class DependenteController
                     socioTitularId: (int)$data['socio_titular_id'],
                     nomeCompleto: $data['nome_completo'],
                     cpf: $data['cpf'],
-                    foto: $data['foto'] ?? null,
+                    telefone: $data['telefone'],
                     dataNascimento: new DateTime($data['data_nascimento']),
-                    dataEntrada: new DateTime($data['data_entrada']),
-                    categoria: CategoriaSocio::from($data['categoria']),
                     dancarino: (bool)$data['dancarino'],
+                    foto: $data['foto'] ?? null
                 );
 
                 $created = $this->dependenteService->create($dependente);
@@ -71,11 +69,10 @@ class DependenteController
                     socioTitularId: (int)$data['socio_titular_id'],
                     nomeCompleto: $data['nome_completo'],
                     cpf: $data['cpf'],
-                    foto: $data['foto'] ?? '',
+                    telefone: $data['telefone'],
                     dataNascimento: new DateTime($data['data_nascimento']),
-                    dataEntrada: new DateTime($data['data_entrada']),
-                    categoria: CategoriaSocio::from($data['categoria']),
                     dancarino: (bool)$data['dancarino'],
+                    foto: $data['foto'] ?? null,
                     id: (int)$id
                 );
 

@@ -22,9 +22,7 @@ CREATE TABLE `dependentes` (
   `cpf` varchar(255),
   `foto` LONGTEXT,
   `data_nascimento` date,
-  `data_entrada` date,
-  `categoria_id` integer,
-  `dancarino` boolean DEFAULT false,
+  `dancarino` boolean DEFAULT false
 );
 
 CREATE TABLE `categorias` (
