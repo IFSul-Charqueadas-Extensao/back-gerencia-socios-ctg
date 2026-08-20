@@ -1,0 +1,40 @@
+name: CD Pipeline Backend CTG Raizes
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executar Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ti/site-php/www/back-ctgraizes
+            
+            # 1. Checa o que mudou no GitHub
+            git fetch origin main
+            
+            # 2. Verifica se houve alteração nos arquivos SQL
+            if git diff --name-only HEAD origin/main | grep -q 'src/Database/'; then
+              BD_ALTERADO=true
+              echo "Alterações no banco detectadas!"
+            else
+              BD_ALTERADO=false
+              echo "Sem alterações no banco."
+            fi
+            
+            # 3. Puxa o código novo para o servidor
+            git pull origin main
+            
+            # 4. Atualiza o banco SOMENTE se necessário
+            if [ "$BD_ALTERADO" = true ]; then
+              echo "Injetando SQL no container mysql_db_php..."
+              docker exec -i mysql_db_php mysql -uphpuser -pphppass phpdb < src/Database/schema.sql
+            fi
