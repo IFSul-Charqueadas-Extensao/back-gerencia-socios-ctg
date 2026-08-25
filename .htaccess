@@ -1,5 +1,11 @@
 RewriteEngine On
 
+# Repassa o cabeçalho Authorization ao PHP. Em CGI/FastCGI o Apache não o
+# entrega por padrão, e sem isto o token nunca chega na API.
+# (O caminho principal do token é o X-Auth-Token, que não sofre esse problema.)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Se a requisição NÃO for para um arquivo (-f) ou pasta (-d) que exista
 # de verdade, encaminha tudo para o index.php, que faz o roteamento da API.
 RewriteCond %{REQUEST_FILENAME} !-f

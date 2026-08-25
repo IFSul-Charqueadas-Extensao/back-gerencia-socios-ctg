@@ -1,0 +1,377 @@
+# ================================
+# AUTENTICAÇÃO — HTTP TESTS
+# ================================
+#
+# COMO USAR (extensão REST Client do VSCode):
+#   1. Rode o "LOGIN ADMIN" abaixo — a variável @adminToken é preenchida
+#      automaticamente a partir da resposta.
+#   2. Repita para os demais perfis conforme precisar.
+#   3. Os testes seguintes já usam essas variáveis.
+#
+# O token vai no cabeçalho X-Auth-Token: em produção o Apache do IFSul usa
+# HTTP Basic Auth e já ocupa o cabeçalho Authorization.
+#
+# Usuários do seed (src/Database/seed.sql):
+#   admin@ctg.local      / admin123       -> admin      (tudo)
+#   financeiro@ctg.local / financeiro123  -> financeiro (mensalidades, pagamentos)
+#   socios@ctg.local     / socios123      -> socios     (socios, dependentes,
+#                                                        categorias, cartao)
+#   consulta@ctg.local   / consulta123    -> consulta   (somente leitura)
+
+@host = http://localhost:8000/api
+
+# ================================
+# LOGIN
+# ================================
+
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ctg.local",
+  "senha": "admin123"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.access_token}}
+@refreshToken = {{loginAdmin.response.body.refresh_token}}
+
+# @name loginFinanceiro
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "financeiro@ctg.local",
+  "senha": "financeiro123"
+}
+
+###
+@financeiroToken = {{loginFinanceiro.response.body.access_token}}
+
+# @name loginSocios
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "socios@ctg.local",
+  "senha": "socios123"
+}
+
+###
+@sociosToken = {{loginSocios.response.body.access_token}}
+
+# @name loginConsulta
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "consulta@ctg.local",
+  "senha": "consulta123"
+}
+
+###
+@consultaToken = {{loginConsulta.response.body.access_token}}
+
+# ================================
+# LOGIN — CASOS NEGATIVOS
+# ================================
+
+# SENHA ERRADA -> 401 "Credenciais inválidas!"
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ctg.local",
+  "senha": "senha-errada"
+}
+
+###
+
+# E-MAIL INEXISTENTE -> 401 com a MESMA mensagem do teste acima.
+# A mensagem é idêntica de propósito: distinguir os dois casos permitiria
+# descobrir quais e-mails estão cadastrados.
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "naoexiste@ctg.local",
+  "senha": "senha-errada"
+}
+
+###
+
+# CAMPOS FALTANDO -> 400
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ctg.local"
+}
+
+###
+
+# ================================
+# SESSÃO
+# ================================
+
+# DADOS DO USUÁRIO LOGADO -> 200 (não deve conter senha_hash)
+GET {{host}}/auth/me
+X-Auth-Token: {{adminToken}}
+
+###
+
+# RENOVAR O ACCESS TOKEN -> 200
+POST {{host}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+###
+
+# ENCERRAR A SESSÃO -> 204
+POST {{host}}/auth/logout
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+###
+
+# REFRESH APÓS O LOGOUT -> 401 (o token foi revogado)
+POST {{host}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+###
+
+# ================================
+# EXIGÊNCIA DE AUTENTICAÇÃO
+# ================================
+
+# SEM TOKEN -> 401
+GET {{host}}/socios
+
+###
+
+# TOKEN INVÁLIDO -> 401
+GET {{host}}/socios
+X-Auth-Token: isto-nao-e-um-token
+
+###
+
+# ASSINATURA ADULTERADA -> 401
+# (troque o último caractere do token colado abaixo)
+GET {{host}}/socios
+X-Auth-Token: {{adminToken}}X
+
+###
+
+# ROTA PÚBLICA: a raiz lista os endpoints sem exigir token -> 200
+GET {{host}}/
+
+###
+
+# ================================
+# MATRIZ DE PERMISSÕES — LEITURA
+# Todos os perfis autenticados leem qualquer recurso, menos /usuarios
+# ================================
+
+# CONSULTA lê sócios -> 200
+GET {{host}}/socios
+X-Auth-Token: {{consultaToken}}
+
+###
+
+# CONSULTA lê relatórios -> 200
+GET {{host}}/relatorios/socios
+X-Auth-Token: {{consultaToken}}
+
+###
+
+# ================================
+# MATRIZ DE PERMISSÕES — ESCRITA
+# ================================
+
+# CONSULTA tentando criar sócio -> 403
+POST {{host}}/socios
+X-Auth-Token: {{consultaToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Permissao",
+  "cpf": "000.000.000-99",
+  "telefone": "51999999999",
+  "email": "teste@teste.com",
+  "logradouro": "Rua Teste",
+  "numero": "1",
+  "bairro": "Centro",
+  "cidade": "Charqueadas",
+  "estado": "RS",
+  "cep": "96745000",
+  "data_nascimento": "2000-01-01",
+  "data_entrada": "2026-01-01",
+  "status": "Ativo",
+  "categoria": "4",
+  "dancarino": false,
+  "paga_instrutor": false
+}
+
+###
+
+# FINANCEIRO tentando criar sócio -> 403 (sócios não é do seu domínio)
+POST {{host}}/socios
+X-Auth-Token: {{financeiroToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Permissao",
+  "cpf": "000.000.000-98",
+  "telefone": "51999999999",
+  "email": "teste@teste.com",
+  "logradouro": "Rua Teste",
+  "numero": "1",
+  "bairro": "Centro",
+  "cidade": "Charqueadas",
+  "estado": "RS",
+  "cep": "96745000",
+  "data_nascimento": "2000-01-01",
+  "data_entrada": "2026-01-01",
+  "status": "Ativo",
+  "categoria": "4",
+  "dancarino": false,
+  "paga_instrutor": false
+}
+
+###
+
+# SOCIOS criando sócio -> 201
+POST {{host}}/socios
+X-Auth-Token: {{sociosToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Permissao",
+  "cpf": "000.000.000-97",
+  "telefone": "51999999999",
+  "email": "teste@teste.com",
+  "logradouro": "Rua Teste",
+  "numero": "1",
+  "bairro": "Centro",
+  "cidade": "Charqueadas",
+  "estado": "RS",
+  "cep": "96745000",
+  "data_nascimento": "2000-01-01",
+  "data_entrada": "2026-01-01",
+  "status": "Ativo",
+  "categoria": "4",
+  "dancarino": false,
+  "paga_instrutor": false
+}
+
+###
+
+# SOCIOS tentando registrar pagamento -> 403 (financeiro não é do seu domínio)
+POST {{host}}/pagamentos
+X-Auth-Token: {{sociosToken}}
+Content-Type: application/json
+
+{
+  "mensalidade_id": 1,
+  "data_pagamento": "2026-08-25",
+  "forma_pagamento": "PIX",
+  "valor_pago": 80,
+  "multa_juros_aplicados": 0
+}
+
+###
+
+# FINANCEIRO registrando pagamento -> 201
+POST {{host}}/pagamentos
+X-Auth-Token: {{financeiroToken}}
+Content-Type: application/json
+
+{
+  "mensalidade_id": 1,
+  "data_pagamento": "2026-08-25",
+  "forma_pagamento": "PIX",
+  "valor_pago": 80,
+  "multa_juros_aplicados": 0
+}
+
+###
+
+# FINANCEIRO tentando emitir cartão -> 403 (cartão pertence a sócios)
+POST {{host}}/cartao-tradicionalista
+X-Auth-Token: {{financeiroToken}}
+Content-Type: application/json
+
+{
+  "socio_id": 1,
+  "dependente_id": null,
+  "data_solicitacao": "2026-08-25",
+  "pago": false,
+  "valor": 25
+}
+
+###
+
+# SOCIOS emitindo cartão -> 201
+POST {{host}}/cartao-tradicionalista
+X-Auth-Token: {{sociosToken}}
+Content-Type: application/json
+
+{
+  "socio_id": 1,
+  "dependente_id": null,
+  "data_solicitacao": "2026-08-25",
+  "pago": false,
+  "valor": 25
+}
+
+###
+
+# FINANCEIRO tentando criar categoria -> 403 (categoria pertence a sócios)
+POST {{host}}/categorias
+X-Auth-Token: {{financeiroToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Cat",
+  "valor_sociedade": 10,
+  "valor_instrutor": 5
+}
+
+###
+
+# SOCIOS criando categoria -> 201
+POST {{host}}/categorias
+X-Auth-Token: {{sociosToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Cat",
+  "valor_sociedade": 10,
+  "valor_instrutor": 5
+}
+
+###
+
+# ADMIN pode tudo -> 201
+POST {{host}}/categorias
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Teste Cat Admin",
+  "valor_sociedade": 10,
+  "valor_instrutor": 5
+}
+
+###

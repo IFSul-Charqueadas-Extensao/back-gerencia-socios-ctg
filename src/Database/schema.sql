@@ -74,3 +74,32 @@ ALTER TABLE `pagamentos` ADD FOREIGN KEY (`mensalidade_id`) REFERENCES `mensalid
 ALTER TABLE `cartao_tradicionalista` ADD FOREIGN KEY (`socio_id`) REFERENCES `socios` (`id`);
 
 ALTER TABLE `cartao_tradicionalista` ADD FOREIGN KEY (`dependente_id`) REFERENCES `dependentes` (`id`);
+
+-- ============================================================
+-- Autenticação e níveis de permissão
+-- (mesmas tabelas de src/Database/migrations/001_auth.sql,
+--  aqui para instalações do zero)
+-- ============================================================
+
+CREATE TABLE `usuarios` (
+  `id` integer PRIMARY KEY AUTO_INCREMENT,
+  `nome` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL UNIQUE,
+  `senha_hash` varchar(255) NOT NULL,
+  `role` ENUM('admin','financeiro','socios','consulta') NOT NULL DEFAULT 'consulta',
+  `ativo` boolean NOT NULL DEFAULT true,
+  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_refresh_token_hash` (`token_hash`)
+);
+
+CREATE TABLE `refresh_tokens` (
+  `id` integer PRIMARY KEY AUTO_INCREMENT,
+  `usuario_id` integer NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expira_em` datetime NOT NULL,
+  `revogado` boolean NOT NULL DEFAULT false,
+  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE `refresh_tokens` ADD FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
