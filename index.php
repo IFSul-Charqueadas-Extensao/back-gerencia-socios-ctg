@@ -2,7 +2,9 @@
 // --- CONFIGURAÇÃO DE CORS (Deve vir antes de qualquer outra lógica) ---
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+// X-Auth-Token carrega o JWT: em produção o Apache do IFSul usa Basic Auth
+// e já ocupa o cabeçalho Authorization.
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Auth-Token");
 // Trata a requisição de Preflight (OPTIONS) do navegador
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     // Retorna o status 200 imediatamente e encerra o script sem processar nada mais
@@ -21,15 +23,31 @@ use Controller\CategoriaController;
 use Controller\SocioController;
 use Controller\DependenteController;
 use Controller\CartaoTradController;
+use Controller\AuthController;
+use Controller\UsuarioController;
+use Http\Autenticacao;
 use Http\Request;
 use Http\Response;
 use Error\APIException;
+use Util\Permissao;
 
 //cria um objeto para armazenar os principais dados da requisição
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER["REQUEST_METHOD"];
 $body = file_get_contents("php://input");
 $request = new Request($uri, $method, $body);
+
+// --- AUTENTICAÇÃO E PERMISSÕES ---
+// A verificação fica aqui, em um único ponto, e não espalhada pelos Controllers:
+// os perfis são definidos por recurso, e é justamente o recurso e o método HTTP
+// que este arquivo já usa para rotear. Assim, nenhum recurso novo nasce
+// desprotegido por esquecimento.
+// Ambas lançam APIException, convertida em JSON pelo handler do config.php.
+if (!Autenticacao::ehPublica($request)) {
+    $usuarioAutenticado = Autenticacao::autenticar($request); // 401 se ausente/inválido/expirado
+    Permissao::exigir($usuarioAutenticado, $request);         // 403 se o perfil não permite
+}
+// ----------------------------------
 
 switch ($request->getResource()) { //conforme o recurso solicitado
     case 'relatorios':
@@ -67,9 +85,28 @@ switch ($request->getResource()) { //conforme o recurso solicitado
         $cartaoTradController = new CartaoTradController();
         $cartaoTradController->processRequest($request);
         break;
+    case 'auth':
+        // rotas para /auth (login, refresh, logout, me)
+        $authController = new AuthController();
+        $authController->processRequest($request);
+        break;
+    case 'usuarios':
+        // rotas para /usuarios (somente admin)
+        $usuarioController = new UsuarioController();
+        $usuarioController->processRequest($request);
+        break;
     case null:
         //para a raiz (rota /)
         $endpoints = [
+            "POST /api/auth/login",
+            "POST /api/auth/refresh",
+            "POST /api/auth/logout",
+            "GET /api/auth/me",
+            "GET /api/usuarios",
+            "GET /api/usuarios/:id",
+            "POST /api/usuarios",
+            "PUT /api/usuarios/:id",
+            "DELETE /api/usuarios/:id",
             "GET /api/relatorios/socios",
             "GET /api/relatorios/financeiro",
             "GET /api/relatorios/inadimplentes",
