@@ -27,5 +27,11 @@ ALTER TABLE mensalidades AUTO_INCREMENT = 1;
 ALTER TABLE pagamentos AUTO_INCREMENT = 1;
 ALTER TABLE cartao_tradicionalista AUTO_INCREMENT = 1;
 
+-- Autenticação
+DELETE FROM `refresh_tokens`;
+DELETE FROM `usuarios`;
+ALTER TABLE `refresh_tokens` AUTO_INCREMENT = 1;
+ALTER TABLE `usuarios` AUTO_INCREMENT = 1;
+
 -- confirmação
 SELECT 'Database deletada com sucesso! Todos os dados de teste foram apagados.' AS status;

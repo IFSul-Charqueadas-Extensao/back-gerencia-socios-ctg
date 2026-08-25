@@ -12,6 +12,9 @@
 -- ================================
 
 -- Limpa data existente (opcional)
+-- refresh_tokens antes de usuarios por causa da foreign key
+DELETE FROM refresh_tokens;
+DELETE FROM usuarios;
 DELETE FROM pagamentos;
 DELETE FROM cartao_tradicionalista;
 DELETE FROM mensalidades;
@@ -76,6 +79,27 @@ INSERT INTO cartao_tradicionalista (id, socio_id, dependente_id, data_solicitaca
 (3, 2, NULL, '2026-02-10', 1, 50.00),
 (4, 4, NULL, '2026-02-15', 0, 50.00);
 
+-- ================================
+-- USUÁRIOS DE TESTE
+-- ================================
+-- SOMENTE PARA TESTES!!!
+--
+-- ATENÇÃO: as senhas abaixo são públicas (estão neste arquivo versionado).
+-- ANTES DE SUBIR PARA PRODUÇÃO: troque a senha do admin e apague os demais.
+--
+--   email                  | senha          | papel
+--   -----------------------+----------------+-----------
+--   admin@ctg.local        | admin123       | admin
+--   financeiro@ctg.local   | financeiro123  | financeiro
+--   socios@ctg.local       | socios123      | socios
+--   consulta@ctg.local     | consulta123    | consulta
+
+INSERT INTO `usuarios` (`id`, `nome`, `email`, `senha_hash`, `role`) VALUES
+(1, 'Administrador',   'admin@ctg.local',      '$2y$10$u8u1scygg8.isMTc73iyr.LpA3hEXvxZB3ecJNuMIP8otvODivrN2', 'admin'),
+(2, 'Tesouraria',      'financeiro@ctg.local', '$2y$10$FG718U3XHIyoKdT44hpKk.HEY5AGWsfl/bu7f7SsIlD7j3v4xFOdC', 'financeiro'),
+(3, 'Secretaria',      'socios@ctg.local',     '$2y$10$/zPJ4J1CFncD2igHcDRVfuZmT6d/kqiuV4nkJ1D7pIWyLsybrHPGK', 'socios'),
+(4, 'Consulta Geral',  'consulta@ctg.local',   '$2y$10$IrcXDq9y6AO/gMBpbDhSVOywCTpZrhRAg1lWCkRXfap59X3htSbEa', 'consulta');
+
 -- Confirmação
 SELECT CONCAT(
     'Database populada com sucesso! ',
@@ -84,5 +108,6 @@ SELECT CONCAT(
     (SELECT COUNT(*) FROM dependentes), ' dependentes, ',
     (SELECT COUNT(*) FROM mensalidades), ' mensalidades, ',
     (SELECT COUNT(*) FROM pagamentos), ' pagamentos, ',
-    (SELECT COUNT(*) FROM cartao_tradicionalista), ' cartoes tradicionalistas.'
+    (SELECT COUNT(*) FROM cartao_tradicionalista), ' cartoes tradicionalistas, ',
+    (SELECT COUNT(*) FROM usuarios), ' usuarios.'
 ) AS status;
