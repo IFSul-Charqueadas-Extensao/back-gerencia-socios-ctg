@@ -1,0 +1,253 @@
+# ================================
+# USUÁRIOS HTTP TESTS
+# ================================
+#
+# Recurso restrito ao perfil admin — inclusive na leitura.
+# Rode o "LOGIN ADMIN" primeiro para preencher @adminToken.
+
+@host = http://localhost:8000/api
+
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ctg.local",
+  "senha": "admin123"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.access_token}}
+
+# @name loginConsulta
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "consulta@ctg.local",
+  "senha": "consulta123"
+}
+
+###
+@consultaToken = {{loginConsulta.response.body.access_token}}
+
+# ================================
+# ACESSO RESTRITO
+# ================================
+
+# NÃO-ADMIN LISTANDO USUÁRIOS -> 403
+# /usuarios é o único recurso invisível na leitura para os demais perfis
+GET {{host}}/usuarios
+X-Auth-Token: {{consultaToken}}
+
+###
+
+# SEM TOKEN -> 401
+GET {{host}}/usuarios
+
+###
+
+# ================================
+# CRUD (admin)
+# ================================
+
+# LISTAR TODOS -> 200 (nenhum registro deve conter senha_hash)
+GET {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+
+###
+
+# BUSCAR POR ID -> 200
+GET {{host}}/usuarios/1
+X-Auth-Token: {{adminToken}}
+
+###
+
+# ID INEXISTENTE -> 404
+GET {{host}}/usuarios/9999
+X-Auth-Token: {{adminToken}}
+
+###
+
+# @name criarUsuario
+# CRIAR -> 201
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Usuario de Teste",
+  "email": "teste@ctg.local",
+  "senha": "senha123",
+  "role": "consulta"
+}
+
+###
+@novoId = {{criarUsuario.response.body.id}}
+
+# ATUALIZAR DADOS -> 200
+PUT {{host}}/usuarios/{{novoId}}
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Usuario de Teste Editado",
+  "email": "teste@ctg.local",
+  "role": "financeiro",
+  "ativo": true
+}
+
+###
+
+# TROCAR APENAS A SENHA -> 200
+# (PUT só com o campo senha; revoga as sessões abertas do usuário)
+PUT {{host}}/usuarios/{{novoId}}
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "senha": "outrasenha123"
+}
+
+###
+
+# LOGIN COM A SENHA NOVA -> 200
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@ctg.local",
+  "senha": "outrasenha123"
+}
+
+###
+
+# DESATIVAR -> 200 (derruba as sessões abertas na hora)
+PUT {{host}}/usuarios/{{novoId}}
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Usuario de Teste Editado",
+  "email": "teste@ctg.local",
+  "role": "financeiro",
+  "ativo": false
+}
+
+###
+
+# LOGIN COM CONTA DESATIVADA -> 403
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@ctg.local",
+  "senha": "outrasenha123"
+}
+
+###
+
+# EXCLUIR -> 200
+DELETE {{host}}/usuarios/{{novoId}}
+X-Auth-Token: {{adminToken}}
+
+###
+
+# ================================
+# VALIDAÇÕES
+# ================================
+
+# E-MAIL DUPLICADO -> 409
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Duplicado",
+  "email": "admin@ctg.local",
+  "senha": "senha123",
+  "role": "consulta"
+}
+
+###
+
+# SENHA CURTA (mínimo 8) -> 400
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Senha Curta",
+  "email": "curta@ctg.local",
+  "senha": "curta",
+  "role": "consulta"
+}
+
+###
+
+# E-MAIL INVÁLIDO -> 400
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Email Ruim",
+  "email": "nao-e-um-email",
+  "senha": "senha123",
+  "role": "consulta"
+}
+
+###
+
+# PERFIL INEXISTENTE -> 400
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Perfil Ruim",
+  "email": "perfil@ctg.local",
+  "senha": "senha123",
+  "role": "chefe"
+}
+
+###
+
+# CAMPO OBRIGATÓRIO AUSENTE -> 400
+POST {{host}}/usuarios
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Sem Senha",
+  "email": "semsenha@ctg.local",
+  "role": "consulta"
+}
+
+###
+
+# ================================
+# PROTEÇÃO DO ÚLTIMO ADMIN
+# ================================
+# Impede o sistema de ficar sem nenhum administrador ativo.
+# Ambos passam a devolver 200 se houver um segundo admin ativo.
+
+# REBAIXAR O ÚNICO ADMIN -> 409
+PUT {{host}}/usuarios/1
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+  "nome": "Administrador",
+  "email": "admin@ctg.local",
+  "role": "consulta",
+  "ativo": true
+}
+
+###
+
+# EXCLUIR O ÚNICO ADMIN -> 409
+DELETE {{host}}/usuarios/1
+X-Auth-Token: {{adminToken}}
+
+###
