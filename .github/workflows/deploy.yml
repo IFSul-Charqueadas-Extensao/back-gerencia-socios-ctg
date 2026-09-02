@@ -71,31 +71,17 @@ jobs:
             echo "[INFO] Verificando existencia do banco de dados $DB_NAME..."
             docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-            # 6. Cria a tabela de controle de migrations (_migrations) se não existir
-            echo "[INFO] Verificando tabela de historico de migrations..."
-            docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "CREATE TABLE IF NOT EXISTS _migrations (id INT AUTO_INCREMENT PRIMARY KEY, migration VARCHAR(255) NOT NULL UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
-
-            # 7. Executa apenas as migrations que ainda NÃO foram aplicadas
-            echo "[INFO] Verificando migrations pendentes..."
+            # 6. Aplica todas as migrations (são idempotentes com IF NOT EXISTS)
+            echo "[INFO] Aplicando migrations..."
             if [ -d "src/Database/migrations" ]; then
               for sql_file in src/Database/migrations/*.sql; do
                 if [ -f "$sql_file" ]; then
                   MIGRATION_NAME=$(basename "$sql_file")
-
-                  # Tenta inserir na tabela _migrations (sucesso = migration nova; falha = já aplicada)
-                  # Usa || para capturar falha sem abortar com set -e
-                  INSERT_OK=true
-                  docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('$MIGRATION_NAME');" 2>/dev/null || INSERT_OK=false
-
-                  if [ "$INSERT_OK" = true ]; then
-                    echo "[MIGRATION] Aplicando: $MIGRATION_NAME..."
-                    docker cp "$sql_file" "$CONTAINER_NAME":/tmp/"$MIGRATION_NAME"
-                    docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "SOURCE /tmp/$MIGRATION_NAME;"
-                    docker exec "$CONTAINER_NAME" rm -f /tmp/"$MIGRATION_NAME"
-                    echo "[OK] Migration $MIGRATION_NAME aplicada com sucesso."
-                  else
-                    echo "[INFO] Ja aplicada: $MIGRATION_NAME"
-                  fi
+                  echo "[MIGRATION] Executando: $MIGRATION_NAME..."
+                  docker cp "$sql_file" "$CONTAINER_NAME":/tmp/"$MIGRATION_NAME"
+                  docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "SOURCE /tmp/$MIGRATION_NAME;"
+                  docker exec "$CONTAINER_NAME" rm -f /tmp/"$MIGRATION_NAME"
+                  echo "[OK] $MIGRATION_NAME aplicada."
                 fi
               done
             fi
