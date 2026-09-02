@@ -68,7 +68,23 @@ jobs:
               sleep 5
             fi
 
-            # 5. Cria a tabela de controle de migrations (_migrations) se não existir
+            # 5. Garante que o banco de dados existe e tem o schema inicial
+            echo "📦 Verificando existência do banco de dados $DB_NAME..."
+            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "
+              CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            "
+
+            # Se o banco estiver vazio, importa o schema inicial
+            TABLE_COUNT=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e \
+              "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME';")
+
+            if [ "$TABLE_COUNT" -eq "0" ] && [ -f "src/Database/schema.sql" ]; then
+              echo "📥 Banco $DB_NAME está vazio. Inicializando com schema.sql..."
+              docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < src/Database/schema.sql
+              echo "✅ Schema inicial importado com sucesso!"
+            fi
+
+            # 6. Cria a tabela de controle de migrations (_migrations) se não existir
             echo "📦 Verificando tabela de histórico de migrations..."
             docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "
               CREATE TABLE IF NOT EXISTS \`_migrations\` (
@@ -78,7 +94,7 @@ jobs:
               ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             "
 
-            # 6. Executa apenas as migrations que ainda NÃO foram aplicadas
+            # 7. Executa apenas as migrations que ainda NÃO foram aplicadas
             echo "🔄 Verificando e aplicando novas migrations..."
             if [ -d "src/Database/migrations" ]; then
               MIGRATION_COUNT=0
