@@ -79,7 +79,7 @@ jobs:
                   MIGRATION_NAME=$(basename "$sql_file")
                   echo "[MIGRATION] Executando: $MIGRATION_NAME..."
                   docker cp "$sql_file" "$CONTAINER_NAME":/tmp/"$MIGRATION_NAME"
-                  docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "SOURCE /tmp/$MIGRATION_NAME;"
+                  docker exec "$CONTAINER_NAME" sh -c "MYSQL_PWD='$DB_PASSWORD' mysql -u'$DB_USER' '$DB_NAME' < /tmp/$MIGRATION_NAME"
                   docker exec "$CONTAINER_NAME" rm -f /tmp/"$MIGRATION_NAME"
                   echo "[OK] $MIGRATION_NAME aplicada."
                 fi
