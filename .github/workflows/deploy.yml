@@ -67,18 +67,9 @@ jobs:
               sleep 5
             fi
 
-            # 5. Garante que o banco de dados existe e tem o schema inicial
+            # 5. Garante que o banco de dados existe
             echo "[INFO] Verificando existencia do banco de dados $DB_NAME..."
             docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-            # Se o banco estiver vazio, importa o schema inicial
-            TABLE_COUNT=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME';")
-
-            if [ "$TABLE_COUNT" -eq "0" ] && [ -f "src/Database/schema.sql" ]; then
-              echo "[INFO] Banco $DB_NAME vazio. Inicializando com schema.sql..."
-              docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < src/Database/schema.sql
-              echo "[OK] Schema inicial importado com sucesso."
-            fi
 
             # 6. Cria a tabela de controle de migrations (_migrations) se não existir
             echo "[INFO] Verificando tabela de historico de migrations..."
