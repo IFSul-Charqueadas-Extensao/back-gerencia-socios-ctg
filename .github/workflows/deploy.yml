@@ -69,11 +69,11 @@ jobs:
 
             # 5. Garante que o banco de dados existe
             echo "[INFO] Verificando existencia do banco de dados $DB_NAME..."
-            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
             # 6. Cria a tabela de controle de migrations (_migrations) se não existir
             echo "[INFO] Verificando tabela de historico de migrations..."
-            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "CREATE TABLE IF NOT EXISTS \`_migrations\` (\`id\` INT AUTO_INCREMENT PRIMARY KEY, \`migration\` VARCHAR(255) NOT NULL UNIQUE, \`applied_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+            docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "CREATE TABLE IF NOT EXISTS _migrations (id INT AUTO_INCREMENT PRIMARY KEY, migration VARCHAR(255) NOT NULL UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 
             # 7. Executa apenas as migrations que ainda NÃO foram aplicadas
             echo "[INFO] Verificando migrations pendentes..."
@@ -83,14 +83,15 @@ jobs:
                 MIGRATION_NAME=$(basename "$sql_file")
 
                 # Verifica se a migration já foi aplicada
-                ALREADY_APPLIED=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM \`_migrations\` WHERE \`migration\` = '${MIGRATION_NAME}';")
+                ALREADY_APPLIED=$(docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM _migrations WHERE migration = '${MIGRATION_NAME}';")
+                ALREADY_APPLIED=$(echo "$ALREADY_APPLIED" | tr -d '[:space:]')
 
-                if [ "$ALREADY_APPLIED" -eq "0" ]; then
+                if [ "$ALREADY_APPLIED" = "0" ] || [ -z "$ALREADY_APPLIED" ]; then
                   echo "[MIGRATION] Aplicando: $MIGRATION_NAME..."
-                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$sql_file"
+                  docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" < "$sql_file"
                   
                   # Registra a migration como executada com sucesso
-                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "INSERT INTO \`_migrations\` (\`migration\`) VALUES ('${MIGRATION_NAME}');"
+                  docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('${MIGRATION_NAME}');"
                   
                   echo "[OK] Migration $MIGRATION_NAME aplicada com sucesso."
                   MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
