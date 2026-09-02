@@ -79,20 +79,17 @@ jobs:
             echo "[INFO] Verificando migrations pendentes..."
             if [ -d "src/Database/migrations" ]; then
               MIGRATION_COUNT=0
-              for sql_file in $(find src/Database/migrations -maxdepth 1 -name "*.sql" | sort); do
+              for sql_file in src/Database/migrations/*.sql; do
+                [ -f "$sql_file" ] || continue
                 MIGRATION_NAME=$(basename "$sql_file")
 
-                # Verifica se a migration já foi aplicada
-                ALREADY_APPLIED=$(docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM _migrations WHERE migration = '${MIGRATION_NAME}';")
-                ALREADY_APPLIED=$(echo "$ALREADY_APPLIED" | tr -d '[:space:]')
+                # Verifica se a migration ja foi aplicada
+                APPLIED=$(docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -ss -e "SELECT 1 FROM _migrations WHERE migration = '$MIGRATION_NAME' LIMIT 1;" || true)
 
-                if [ "$ALREADY_APPLIED" = "0" ] || [ -z "$ALREADY_APPLIED" ]; then
+                if [ "$APPLIED" != "1" ]; then
                   echo "[MIGRATION] Aplicando: $MIGRATION_NAME..."
                   docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" < "$sql_file"
-                  
-                  # Registra a migration como executada com sucesso
-                  docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('${MIGRATION_NAME}');"
-                  
+                  docker exec -e MYSQL_PWD="$DB_PASSWORD" -i "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('$MIGRATION_NAME');"
                   echo "[OK] Migration $MIGRATION_NAME aplicada com sucesso."
                   MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
                 else
