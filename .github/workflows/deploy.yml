@@ -77,17 +77,23 @@ jobs:
 
             # 7. Executa apenas as migrations que ainda NÃO foram aplicadas
             echo "[INFO] Verificando migrations pendentes..."
+            echo "[DEBUG] Listando conteudo de src/Database/migrations:"
+            ls -la src/Database/migrations/ || echo "[DEBUG] Diretorio nao encontrado"
             if [ -d "src/Database/migrations" ]; then
               for sql_file in src/Database/migrations/*.sql; do
+                echo "[DEBUG] Processando: $sql_file"
                 if [ -f "$sql_file" ]; then
                   MIGRATION_NAME=$(basename "$sql_file")
+                  echo "[DEBUG] Tentando INSERT para: $MIGRATION_NAME"
 
                   # Tenta inserir na tabela _migrations (sucesso = migration nova; falha = já aplicada)
-                  if docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('$MIGRATION_NAME');" 2>/dev/null; then
+                  if docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "INSERT INTO _migrations (migration) VALUES ('$MIGRATION_NAME');"; then
                     echo "[MIGRATION] Aplicando: $MIGRATION_NAME..."
                     # Copia o arquivo SQL para dentro do container e executa (evita problemas com stdin via SSH)
                     docker cp "$sql_file" "$CONTAINER_NAME":/tmp/"$MIGRATION_NAME"
+                    echo "[DEBUG] Arquivo copiado para container. Executando SQL..."
                     docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" "$DB_NAME" -e "SOURCE /tmp/$MIGRATION_NAME;"
+                    echo "[DEBUG] SQL executado. Limpando arquivo temporario..."
                     docker exec "$CONTAINER_NAME" rm -f /tmp/"$MIGRATION_NAME"
                     echo "[OK] Migration $MIGRATION_NAME aplicada com sucesso."
                   else
@@ -95,6 +101,8 @@ jobs:
                   fi
                 fi
               done
+            else
+              echo "[DEBUG] Diretorio src/Database/migrations NAO existe"
             fi
 
             # 8. Ajusta permissões de arquivos
