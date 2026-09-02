@@ -4,16 +4,15 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite disparo manual caso necessário
+  workflow_dispatch:
 
-# Evita que deploys concorrentes ocorram ao mesmo tempo
 concurrency:
   group: deploy-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: 🚀 Deploy em Produção
+    name: Deploy Backend
     runs-on: ubuntu-latest
     steps:
       - name: Executar Deploy via SSH
@@ -23,12 +22,12 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: GITHUB_SHA,GITHUB_REF_NAME
-          script_stop: true # Interrompe imediatamente em caso de erro em qualquer comando
+          script_stop: true
           script: |
             set -euo pipefail
 
             echo "=================================================="
-            echo "🚀 Iniciando Deploy - Commit: ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
+            echo "[INFO] Iniciando Deploy Backend - Commit: ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
             echo "=================================================="
 
             APP_DIR="/home/ti/site-php/www/back-ctgraizes"
@@ -36,20 +35,20 @@ jobs:
 
             # 1. Verifica se o diretório do projeto existe
             if [ ! -d "$APP_DIR" ]; then
-              echo "❌ Erro: Diretório $APP_DIR não encontrado no servidor!"
+              echo "[ERROR] Diretorio $APP_DIR nao encontrado no servidor."
               exit 1
             fi
 
             cd "$APP_DIR"
 
             # 2. Atualiza o código garantindo estado limpo
-            echo "📥 Atualizando código a partir do repositório..."
+            echo "[INFO] Atualizando repositorio a partir da branch main..."
             git fetch origin main
             git reset --hard origin/main
 
             # 3. Carrega variáveis de ambiente do .env para conexão com o banco
             if [ -f .env ]; then
-              echo "⚙️ Carregando configurações do .env..."
+              echo "[INFO] Carregando configuracoes do .env..."
               DB_USER=$(grep -E '^DB_USER=' .env | cut -d '=' -f2- | tr -d ' "\r')
               DB_PASSWORD=$(grep -E '^DB_PASSWORD=' .env | cut -d '=' -f2- | tr -d ' "\r')
               DB_NAME=$(grep -E '^DB_NAME=' .env | cut -d '=' -f2- | tr -d ' "\r')
@@ -61,71 +60,60 @@ jobs:
             DB_NAME=${DB_NAME:-"phpdb"}
 
             # 4. Verifica se o container do MySQL está ativo
-            echo "🔍 Verificando status do container $CONTAINER_NAME..."
+            echo "[INFO] Verificando status do container $CONTAINER_NAME..."
             if ! docker ps --filter "name=${CONTAINER_NAME}" --filter "status=running" --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-              echo "⚠️ Aviso: Container $CONTAINER_NAME não está em execução. Tentando iniciar..."
-              docker start "$CONTAINER_NAME" || { echo "❌ Falha ao iniciar o container $CONTAINER_NAME"; exit 1; }
+              echo "[WARN] Container $CONTAINER_NAME inativo. Tentando iniciar..."
+              docker start "$CONTAINER_NAME" || { echo "[ERROR] Falha ao iniciar o container $CONTAINER_NAME."; exit 1; }
               sleep 5
             fi
 
             # 5. Garante que o banco de dados existe e tem o schema inicial
-            echo "📦 Verificando existência do banco de dados $DB_NAME..."
-            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "
-              CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            "
+            echo "[INFO] Verificando existencia do banco de dados $DB_NAME..."
+            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
             # Se o banco estiver vazio, importa o schema inicial
-            TABLE_COUNT=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e \
-              "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME';")
+            TABLE_COUNT=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME';")
 
             if [ "$TABLE_COUNT" -eq "0" ] && [ -f "src/Database/schema.sql" ]; then
-              echo "📥 Banco $DB_NAME está vazio. Inicializando com schema.sql..."
+              echo "[INFO] Banco $DB_NAME vazio. Inicializando com schema.sql..."
               docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < src/Database/schema.sql
-              echo "✅ Schema inicial importado com sucesso!"
+              echo "[OK] Schema inicial importado com sucesso."
             fi
 
             # 6. Cria a tabela de controle de migrations (_migrations) se não existir
-            echo "📦 Verificando tabela de histórico de migrations..."
-            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "
-              CREATE TABLE IF NOT EXISTS \`_migrations\` (
-                \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-                \`migration\` VARCHAR(255) NOT NULL UNIQUE,
-                \`applied_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            "
+            echo "[INFO] Verificando tabela de historico de migrations..."
+            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "CREATE TABLE IF NOT EXISTS \`_migrations\` (\`id\` INT AUTO_INCREMENT PRIMARY KEY, \`migration\` VARCHAR(255) NOT NULL UNIQUE, \`applied_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 
             # 7. Executa apenas as migrations que ainda NÃO foram aplicadas
-            echo "🔄 Verificando e aplicando novas migrations..."
+            echo "[INFO] Verificando migrations pendentes..."
             if [ -d "src/Database/migrations" ]; then
               MIGRATION_COUNT=0
               for sql_file in $(find src/Database/migrations -maxdepth 1 -name "*.sql" | sort); do
                 MIGRATION_NAME=$(basename "$sql_file")
 
                 # Verifica se a migration já foi aplicada
-                ALREADY_APPLIED=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e \
-                  "SELECT COUNT(*) FROM \`_migrations\` WHERE \`migration\` = '${MIGRATION_NAME}';")
+                ALREADY_APPLIED=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e "SELECT COUNT(*) FROM \`_migrations\` WHERE \`migration\` = '${MIGRATION_NAME}';")
 
                 if [ "$ALREADY_APPLIED" -eq "0" ]; then
-                  echo "➡️ Aplicando migration: $MIGRATION_NAME..."
+                  echo "[MIGRATION] Aplicando: $MIGRATION_NAME..."
                   docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$sql_file"
                   
                   # Registra a migration como executada com sucesso
-                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e \
-                    "INSERT INTO \`_migrations\` (\`migration\`) VALUES ('${MIGRATION_NAME}');"
+                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "INSERT INTO \`_migrations\` (\`migration\`) VALUES ('${MIGRATION_NAME}');"
                   
-                  echo "✅ Migration $MIGRATION_NAME aplicada com sucesso!"
+                  echo "[OK] Migration $MIGRATION_NAME aplicada com sucesso."
                   MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
                 else
-                  echo "⏩ [Já aplicada] $MIGRATION_NAME"
+                  echo "[INFO] Ja aplicada: $MIGRATION_NAME"
                 fi
               done
-              echo "🎉 Migrations processadas. Total de novas aplicadas: $MIGRATION_COUNT"
+              echo "[INFO] Migrations processadas. Total de novas aplicadas: $MIGRATION_COUNT"
             fi
 
-            # 7. Ajusta permissões de arquivos
-            echo "🔒 Ajustando permissões de arquivos..."
+            # 8. Ajusta permissões de arquivos
+            echo "[INFO] Ajustando permissoes de arquivos..."
             chmod -R 755 . || true
 
             echo "=================================================="
-            echo "✅ Deploy finalizado com sucesso no servidor!"
+            echo "[OK] Deploy do Backend finalizado com sucesso."
             echo "=================================================="
