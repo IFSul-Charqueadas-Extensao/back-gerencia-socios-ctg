@@ -1,12 +1,19 @@
-name: CD Pipeline Backend CTG Raizes
+name: CD Pipeline CTG Raízes (Backend)
 
 on:
   push:
     branches:
-      - main 
+      - main
+  workflow_dispatch: # Permite disparo manual caso necessário
+
+# Evita que deploys concorrentes ocorram ao mesmo tempo
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    name: 🚀 Deploy em Produção
     runs-on: ubuntu-latest
     steps:
       - name: Executar Deploy via SSH
@@ -15,21 +22,94 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GITHUB_SHA,GITHUB_REF_NAME
+          script_stop: true # Interrompe imediatamente em caso de erro em qualquer comando
           script: |
-            # 1. Navega até a pasta do backend no servidor
-            cd /home/ti/site-php/www/back-ctgraizes
-            
-            # 2. Puxa as últimas atualizações do GitHub
-            git pull origin main
-            
-            # 3. Executa as migrations do banco de dados em ordem alfabética/numérica
-            echo "Iniciando verificação de migrations..."
-            
-            for sql_file in $(ls src/Database/migrations/*.sql | sort); do
-              echo "Aplicando: $sql_file"
-              
-              # O '|| true' no final garante que se a tabela já existir, a esteira não vai quebrar
-              docker exec -i mysql_db_php mysql -uroot -pexemplo123 phpdb < "$sql_file" || true
-            done
-            
-            echo "Deploy e Migrations finalizados com sucesso!"
+            set -euo pipefail
+
+            echo "=================================================="
+            echo "🚀 Iniciando Deploy - Commit: ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
+            echo "=================================================="
+
+            APP_DIR="/home/ti/site-php/www/back-ctgraizes"
+            CONTAINER_NAME="mysql_db_php"
+
+            # 1. Verifica se o diretório do projeto existe
+            if [ ! -d "$APP_DIR" ]; then
+              echo "❌ Erro: Diretório $APP_DIR não encontrado no servidor!"
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+
+            # 2. Atualiza o código garantindo estado limpo
+            echo "📥 Atualizando código a partir do repositório..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # 3. Carrega variáveis de ambiente do .env para conexão com o banco
+            if [ -f .env ]; then
+              echo "⚙️ Carregando configurações do .env..."
+              DB_USER=$(grep -E '^DB_USER=' .env | cut -d '=' -f2- | tr -d ' "\r')
+              DB_PASSWORD=$(grep -E '^DB_PASSWORD=' .env | cut -d '=' -f2- | tr -d ' "\r')
+              DB_NAME=$(grep -E '^DB_NAME=' .env | cut -d '=' -f2- | tr -d ' "\r')
+            fi
+
+            # Fallback para credenciais padrão caso não encontradas no .env
+            DB_USER=${DB_USER:-"root"}
+            DB_PASSWORD=${DB_PASSWORD:-"exemplo123"}
+            DB_NAME=${DB_NAME:-"phpdb"}
+
+            # 4. Verifica se o container do MySQL está ativo
+            echo "🔍 Verificando status do container $CONTAINER_NAME..."
+            if ! docker ps --filter "name=${CONTAINER_NAME}" --filter "status=running" --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+              echo "⚠️ Aviso: Container $CONTAINER_NAME não está em execução. Tentando iniciar..."
+              docker start "$CONTAINER_NAME" || { echo "❌ Falha ao iniciar o container $CONTAINER_NAME"; exit 1; }
+              sleep 5
+            fi
+
+            # 5. Cria a tabela de controle de migrations (_migrations) se não existir
+            echo "📦 Verificando tabela de histórico de migrations..."
+            docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "
+              CREATE TABLE IF NOT EXISTS \`_migrations\` (
+                \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+                \`migration\` VARCHAR(255) NOT NULL UNIQUE,
+                \`applied_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            "
+
+            # 6. Executa apenas as migrations que ainda NÃO foram aplicadas
+            echo "🔄 Verificando e aplicando novas migrations..."
+            if [ -d "src/Database/migrations" ]; then
+              MIGRATION_COUNT=0
+              for sql_file in $(find src/Database/migrations -maxdepth 1 -name "*.sql" | sort); do
+                MIGRATION_NAME=$(basename "$sql_file")
+
+                # Verifica se a migration já foi aplicada
+                ALREADY_APPLIED=$(docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -s -e \
+                  "SELECT COUNT(*) FROM \`_migrations\` WHERE \`migration\` = '${MIGRATION_NAME}';")
+
+                if [ "$ALREADY_APPLIED" -eq "0" ]; then
+                  echo "➡️ Aplicando migration: $MIGRATION_NAME..."
+                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$sql_file"
+                  
+                  # Registra a migration como executada com sucesso
+                  docker exec -i "$CONTAINER_NAME" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e \
+                    "INSERT INTO \`_migrations\` (\`migration\`) VALUES ('${MIGRATION_NAME}');"
+                  
+                  echo "✅ Migration $MIGRATION_NAME aplicada com sucesso!"
+                  MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
+                else
+                  echo "⏩ [Já aplicada] $MIGRATION_NAME"
+                fi
+              done
+              echo "🎉 Migrations processadas. Total de novas aplicadas: $MIGRATION_COUNT"
+            fi
+
+            # 7. Ajusta permissões de arquivos
+            echo "🔒 Ajustando permissões de arquivos..."
+            chmod -R 755 . || true
+
+            echo "=================================================="
+            echo "✅ Deploy finalizado com sucesso no servidor!"
+            echo "=================================================="
