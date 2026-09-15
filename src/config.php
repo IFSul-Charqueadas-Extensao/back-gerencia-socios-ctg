@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 function autoload(string $className)
 {
     //$classname possui tanto o namespace quanto o nome da classe
@@ -10,9 +12,16 @@ function autoload(string $className)
     //define o caminho para o arquivo
     $file = __DIR__ . '/' . $className . '.php';
 
-    // Verifica se o arquivo existe
+    // Verifica se o arquivo existe.
+    // IMPORTANTE: se não existir, apenas retornamos (não lançamos exceção!).
+    // Isso permite que outros autoloaders registrados (como o do Composer)
+    // tenham a chance de tentar carregar a classe. Além disso, bibliotecas
+    // como o php-font-lib (usado pelo Dompdf) fazem verificações defensivas
+    // com class_exists(), que disparam toda a cadeia de autoloaders — se
+    // lançarmos uma exceção aqui, quebramos essa verificação e causamos
+    // um erro fatal onde deveria haver apenas um "false" silencioso.
     if (!file_exists($file)) {
-        throw new Exception("Class not found: {$className}");
+        return;
     }
 
     // Inclui o arquivo
@@ -28,35 +37,18 @@ use Http\Response;
 
 function exceptionHandler(\Throwable $exception)
 {
-    //$exception é objeto da classe Throwable
-    //assim, adimite objetos da classe Error e Exception, que herdam de Throwable
-    //bem como objetos da classe APIException, que herda de Exception
-
-    //objetos da classe APIException chegarão aqui com mensagens de erro
-    //e códigos personalizados, que nós programamos, pois eram previstos
-
-    //demais objetos chegarão com mensagens e códigos do próprio PHP,
-    //por isso devemos alterá-lo antes de encaminhar a resposta
-
     if ($exception instanceof APIException) {
-        //Para as exceções previstas e geradas na própria API
         Response::send(['message' => $exception->getMessage()], $exception->getCode());
     } else {
-        //Para as exceções não previstas, geradas pelo PHP
-        // print_r($exception); //para testes e debug
+        error_log($exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
         Response::send(['message' => 'Unable to process this request!'], 500);
     }
 }
 
-//registra a função exceptionHandler() para ser responsável por tratar
-//todas as exceções e erros não capturados
 set_exception_handler('exceptionHandler');
 
-//registra a função handleError() para ser responsável por tratar
-//erros do PHP, convertendo-os em exceções
 function handleError($severity, $message, $file, $line)
 {
-    // Converte erros em exceções
     throw new ErrorException($message, 0, $severity, $file, $line);
 }
 
