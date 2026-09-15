@@ -62,6 +62,8 @@ CREATE TABLE `cartao_tradicionalista` (
   `socio_id` integer,
   `dependente_id` integer,
   `data_solicitacao` date,
+  `matricula` varchar(20),
+  `data_validade` date,
   `pago` boolean,
   `valor` decimal
 );
@@ -69,6 +71,8 @@ CREATE TABLE `cartao_tradicionalista` (
 ALTER TABLE `socios` ADD FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`);
 
 ALTER TABLE `dependentes` ADD FOREIGN KEY (`socio_titular_id`) REFERENCES `socios` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `dependentes` ADD FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`);
 
 ALTER TABLE `mensalidades` ADD FOREIGN KEY (`socio_id`) REFERENCES `socios` (`id`);
 

@@ -24,6 +24,11 @@ class CartaoTradController {
         switch ($method) {
 
             case "GET":
+                if ($id && $request->getSubCollection() === 'pdf') {
+                    $this->handleGeneratePdf((int)$id);
+                    return;
+                }
+
                 if ($id) {
                     $cartao = $this->cartaoService->findById((int)$id);
 
@@ -94,5 +99,21 @@ class CartaoTradController {
             default:
                 throw new APIException("Método não permitido!", 405);
         }
+    }
+
+    private function handleGeneratePdf(int $cartaoId): void {
+        $pdfContent = $this->cartaoService->generatePdf($cartaoId);
+
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="cartao-tradicionalista-' . $cartaoId . '.pdf"');
+        header('Content-Length: ' . strlen($pdfContent));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+
+        echo $pdfContent;
     }
 }

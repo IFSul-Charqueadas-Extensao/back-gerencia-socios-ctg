@@ -12,6 +12,8 @@ class CartaoTrad implements JsonSerializable {
     private DateTime $dataSolicitacao;
     private bool $pago;
     private float $valor;
+    private ?string $matricula;
+    private ?DateTime $dataValidade;
 
     public function __construct(
         ?int $socioId,
@@ -19,7 +21,9 @@ class CartaoTrad implements JsonSerializable {
         DateTime $dataSolicitacao,
         bool $pago,
         float $valor,
-        ?int $id = null
+        ?int $id = null,
+        ?string $matricula = null,
+        ?DateTime $dataValidade = null
     ) {
         $this->id = $id;
         $this->socioId = $socioId;
@@ -27,6 +31,8 @@ class CartaoTrad implements JsonSerializable {
         $this->dataSolicitacao = $dataSolicitacao;
         $this->pago = $pago;
         $this->valor = $valor;
+        $this->matricula = $matricula;
+        $this->dataValidade = $dataValidade;
     }
 
     public function getId(): ?int {
@@ -57,6 +63,22 @@ class CartaoTrad implements JsonSerializable {
         return $this->valor;
     }
 
+    public function getMatricula(): ?string {
+        return $this->matricula;
+    }
+
+    public function setMatricula(string $matricula): void {
+        $this->matricula = $matricula;
+    }
+
+    public function getDataValidade(): ?DateTime {
+        return $this->dataValidade;
+    }
+
+    public function setDataValidade(DateTime $dataValidade): void {
+        $this->dataValidade = $dataValidade;
+    }
+
     public function jsonSerialize(): array {
         return [
             'id' => $this->id,
@@ -64,7 +86,9 @@ class CartaoTrad implements JsonSerializable {
             'dependente_id' => $this->dependenteId,
             'data_solicitacao' => $this->dataSolicitacao->format('Y-m-d'),
             'pago' => $this->pago,
-            'valor' => $this->valor
+            'valor' => $this->valor,
+            'matricula' => $this->matricula,
+            'data_validade' => $this->dataValidade?->format('Y-m-d')
         ];
     }
 }
