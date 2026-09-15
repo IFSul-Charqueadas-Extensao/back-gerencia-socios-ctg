@@ -1,0 +1,2 @@
+ALTER TABLE dependentes
+ADD COLUMN telefone VARCHAR(255) NULL AFTER cpf;
