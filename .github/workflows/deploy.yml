@@ -1,0 +1,95 @@
+name: CD Pipeline CTG Raízes (Backend)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executar Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GITHUB_SHA,GITHUB_REF_NAME
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            echo "=================================================="
+            echo "[INFO] Iniciando Deploy Backend - Commit: ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
+            echo "=================================================="
+
+            APP_DIR="/home/ti/site-php/www/back-ctgraizes"
+            CONTAINER_NAME="mysql_db_php"
+
+            # 1. Verifica se o diretório do projeto existe
+            if [ ! -d "$APP_DIR" ]; then
+              echo "[ERROR] Diretorio $APP_DIR nao encontrado no servidor."
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+
+            # 2. Atualiza o código garantindo estado limpo
+            echo "[INFO] Atualizando repositorio a partir da branch main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # 3. Carrega variáveis de ambiente do .env para conexão com o banco
+            if [ -f .env ]; then
+              echo "[INFO] Carregando configuracoes do .env..."
+              DB_USER=$(grep -E '^DB_USER=' .env | cut -d '=' -f2- | tr -d ' "\r')
+              DB_PASSWORD=$(grep -E '^DB_PASSWORD=' .env | cut -d '=' -f2- | tr -d ' "\r')
+              DB_NAME=$(grep -E '^DB_NAME=' .env | cut -d '=' -f2- | tr -d ' "\r')
+            fi
+
+            # Fallback para credenciais padrão caso não encontradas no .env
+            DB_USER=${DB_USER:-"root"}
+            DB_PASSWORD=${DB_PASSWORD:-"exemplo123"}
+            DB_NAME=${DB_NAME:-"phpdb"}
+
+            # 4. Verifica se o container do MySQL está ativo
+            echo "[INFO] Verificando status do container $CONTAINER_NAME..."
+            if ! docker ps --filter "name=${CONTAINER_NAME}" --filter "status=running" --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+              echo "[WARN] Container $CONTAINER_NAME inativo. Tentando iniciar..."
+              docker start "$CONTAINER_NAME" || { echo "[ERROR] Falha ao iniciar o container $CONTAINER_NAME."; exit 1; }
+              sleep 5
+            fi
+
+            # 5. Garante que o banco de dados existe
+            echo "[INFO] Verificando existencia do banco de dados $DB_NAME..."
+            docker exec -e MYSQL_PWD="$DB_PASSWORD" "$CONTAINER_NAME" mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+            # 6. Aplica todas as migrations (são idempotentes com IF NOT EXISTS)
+            echo "[INFO] Aplicando migrations..."
+            if [ -d "src/Database/migrations" ]; then
+              for sql_file in src/Database/migrations/*.sql; do
+                if [ -f "$sql_file" ]; then
+                  MIGRATION_NAME=$(basename "$sql_file")
+                  echo "[MIGRATION] Executando: $MIGRATION_NAME..."
+                  docker cp "$sql_file" "$CONTAINER_NAME":/tmp/"$MIGRATION_NAME"
+                  docker exec "$CONTAINER_NAME" sh -c "MYSQL_PWD='$DB_PASSWORD' mysql -u'$DB_USER' '$DB_NAME' < /tmp/$MIGRATION_NAME"
+                  docker exec "$CONTAINER_NAME" rm -f /tmp/"$MIGRATION_NAME"
+                  echo "[OK] $MIGRATION_NAME aplicada."
+                fi
+              done
+            fi
+
+            # 8. Ajusta permissões de arquivos
+            echo "[INFO] Ajustando permissoes de arquivos..."
+            chmod -R 755 . || true
+
+            echo "=================================================="
+            echo "[OK] Deploy do Backend finalizado com sucesso."
+            echo "=================================================="

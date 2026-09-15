@@ -41,6 +41,8 @@ function exceptionHandler(\Throwable $exception)
         Response::send(['message' => $exception->getMessage()], $exception->getCode());
     } else {
         error_log($exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
+        //Para as exceções não previstas, geradas pelo PHP
+        print_r($exception); //para testes e debug
         Response::send(['message' => 'Unable to process this request!'], 500);
     }
 }

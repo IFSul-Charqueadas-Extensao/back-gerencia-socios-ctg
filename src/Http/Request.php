@@ -44,7 +44,7 @@ class Request
         parse_str($queryString, $this->query); //gera um array associativo
 
         //verifica o corpo da requisição
-        if ($rawBody) {
+        if ($rawBody !== null && trim($rawBody) !== '') {
             //decodifica o corpo que deve vir no formato JSON
             //gera um array associativo
             $this->body = json_decode($rawBody, true) ?? [];
@@ -57,7 +57,6 @@ class Request
             $this->body = [];
         }
     }
-
     //métodos GET
     public function getResource(): string
     {
