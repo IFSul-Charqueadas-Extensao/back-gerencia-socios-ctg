@@ -1,8 +1,9 @@
 # 📊 Sistema de Gestao CTG Raizes da (Backend)
 
-## Tecnologias necessarias
+## Tecnologias necessárias
 
-Xampp
+- **Xampp** (PHP + MySQL)
+- **Composer** (gerenciador de dependências do PHP)
 
 ## ⚙️ Configuração do Ambiente
 
@@ -22,7 +23,37 @@ cd <nome-do-projeto>
 
 ---
 
-### 2. Configurar as variáveis de ambiente
+### 2. Instalar as dependências do PHP
+
+Primeiro, verifique se você já tem o Composer instalado:
+
+**Linux, macOS e Windows:**
+```bash
+composer --version
+```
+
+Se aparecer a versão instalada, siga para o comando abaixo. Se der erro de
+comando não encontrado, baixe o Composer em
+[getcomposer.org/download](https://getcomposer.org/download/) e siga o
+instalador do seu sistema antes de continuar.
+
+Com o Composer disponível, na raiz do projeto rode:
+
+```bash
+composer install
+```
+
+Esse comando lê o arquivo `composer.json` e baixa para a pasta `vendor/` todas as
+bibliotecas usadas pelo backend (por exemplo, geração de PDF, código de
+barras e QR Code do cartão tradicionalista).
+
+> A pasta `vendor/` nunca deve ser commitada, ela já está no `.gitignore`.
+> Rode `composer install` de novo sempre que puxar mudanças que alterem o
+> `composer.json` ou o `composer.lock`.
+
+---
+
+### 3. Configurar as variáveis de ambiente
 
 Copie o arquivo de exemplo e preencha com as suas credenciais locais:
 
@@ -47,7 +78,7 @@ DB_PASSWORD=1234
 
 ---
 
-### 3. Configurar o banco de dados
+### 4. Configurar o banco de dados
 
 Acesse o MySQL:
 
@@ -63,7 +94,7 @@ CREATE DATABASE ctg;
 
 ---
 
-### 4. Criar usuário
+### 5. Criar usuário
 
 ```sql
 CREATE USER 'ctg_user'@'localhost' IDENTIFIED BY '1234';
@@ -74,7 +105,7 @@ EXIT;
 
 ---
 
-### 5. Importar o banco
+### 6. Importar o banco
 
 ```bash
 mysql -u ctg_user -p ctg -e "source src/Database/schema.sql"
@@ -91,7 +122,7 @@ mysql -u ctg_user -p ctg -e "source src/Database/schema.sql"
 >
 > Pode ser executada mais de uma vez sem problema.
 
-### 6. Popular banco de dados (PARA TESTES!)
+### 7. Popular banco de dados (PARA TESTES!)
 
 Execute no terminal
 ```bash
@@ -207,6 +238,18 @@ rode os blocos de login do topo primeiro, eles preenchem as variáveis de token.
 
 ## 🩺 Problemas comuns
 
+### `composer` não é reconhecido / `command not found`
+
+O Composer não está instalado ou não está no PATH. Baixe em
+[getcomposer.org/download](https://getcomposer.org/download/) e siga o
+instalador para o seu sistema. Depois, reabra o terminal (ou o VSCode) para
+que o PATH atualizado seja reconhecido.
+
+### Erro `Class "Dompdf\Dompdf" not found` (ou similar, ao gerar PDF/cartão)
+
+Faltou instalar as dependências do PHP. Rode `composer install` na raiz do
+projeto — veja o passo 2 acima.
+
 ### `mysql` não é reconhecido / `command not found`
 
 O MySQL está instalado, mas o terminal não sabe onde encontrá-lo.
@@ -253,7 +296,7 @@ painel do XAMPP e clique em **Start** no MySQL.
 ### Login devolve `500 Variável JWT_SECRET não definida no .env!`
 
 Seu `.env` não tem as variáveis de autenticação. Copie-as do `.env.example` —
-veja o passo 2 e [`docs/AUTENTICACAO.md`](docs/AUTENTICACAO.md).
+veja o passo 3 e [`docs/AUTENTICACAO.md`](docs/AUTENTICACAO.md).
 
 ---
 
