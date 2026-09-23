@@ -1,29 +1,19 @@
 <?php
-/** @var string $brasaoBase64 */
-/** @var string $fotoBase64 */
+/** @var string $brasaoBase64    data URI JPEG */
+/** @var string $gradienteBase64 data URI JPEG */
+/** @var string $fotoBase64      data URI JPEG (ou base64 puro) */
 /** @var string $nomeCompleto */
 /** @var string $dataNascimento */
 /** @var string $dataValidade */
 /** @var string $categoria */
 /** @var string $cpf */
 /** @var string $matricula */
-/** @var string $codigoBarrasBase64 */
-/** @var string $qrCodeBase64 */
+/** @var string $codigoBarrasBase64 data URI SVG */
+/** @var string $qrCodeBase64       data URI SVG */
 
-if (!str_starts_with($brasaoBase64, 'data:')) {
-    $brasaoBase64 = 'data:image/png;base64,' . $brasaoBase64;
-}
 if (!str_starts_with($fotoBase64, 'data:')) {
     $fotoBase64 = 'data:image/jpeg;base64,' . $fotoBase64;
 }
-if (!str_starts_with($codigoBarrasBase64, 'data:')) {
-    $codigoBarrasBase64 = 'data:image/png;base64,' . $codigoBarrasBase64;
-}
-if (!str_starts_with($qrCodeBase64, 'data:')) {
-    $qrCodeBase64 = 'data:image/png;base64,' . $qrCodeBase64;
-}
-
-$gradienteBase64 = trim(file_get_contents(__DIR__ . '/gradiente_base64.txt'));
 
 ?>
 <!DOCTYPE html>
@@ -57,10 +47,17 @@ $gradienteBase64 = trim(file_get_contents(__DIR__ . '/gradiente_base64.txt'));
         height: 196pt;
         border-radius: 10pt;
         background-color: #0a6fd6;
-        background-image: url('data:image/png;base64,<?php echo $gradienteBase64; ?>');
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-position: center;
+    }
+
+    /* Gradiente como <img> e não background-image: sem GD o Dompdf
+       só desenha fundos via GD, mas desenha <img> JPEG direto. */
+    .fundo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 298pt;
+        height: 196pt;
+        border-radius: 10pt;
     }
 
     .faixa-branca {
@@ -249,6 +246,8 @@ $gradienteBase64 = trim(file_get_contents(__DIR__ . '/gradiente_base64.txt'));
 <body>
 
 <div class="cartao">
+
+    <img class="fundo" src="<?php echo $gradienteBase64; ?>" alt="">
 
     <div class="faixa-branca"></div>
     <img class="brasao-img" src="<?php echo $brasaoBase64; ?>" alt="Brasão">

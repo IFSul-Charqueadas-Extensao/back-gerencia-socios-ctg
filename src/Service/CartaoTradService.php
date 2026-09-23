@@ -8,9 +8,11 @@ use Repository\CartaoTradRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use DateTime;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
-use Picqer\Barcode\BarcodeGeneratorPNG;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer as QrCodeWriter;
+use Picqer\Barcode\BarcodeGeneratorSVG;
 
 class CartaoTradService
 {
@@ -85,6 +87,15 @@ class CartaoTradService
                 422
             );
         }
+
+        // Sem GD o Dompdf não desenha PNG/WebP; o front já converte para JPEG
+        // no upload, mas fotos antigas podem estar em outro formato.
+        if (!$this->isFotoJpeg($socio->getFoto())) {
+            throw new APIException(
+                "A foto do sócio precisa estar em JPEG para gerar o Cartão Tradicionalista.",
+                422
+            );
+        }
     }
 
     public function generatePdf(int $cartaoId): string
@@ -112,19 +123,21 @@ class CartaoTradService
         $categoria      = 'TITULAR';
         $matricula      = $cartao->getMatricula() ?? 'N/A';
 
-        $barcodeGenerator   = new BarcodeGeneratorPNG();
-        $codigoBarrasPng    = $barcodeGenerator->getBarcode($matricula, $barcodeGenerator::TYPE_CODE_128, 3, 60);
-        $codigoBarrasBase64 = base64_encode($codigoBarrasPng);
+        // O servidor do IFSul não tem a extensão GD, e sem ela o Dompdf só
+        // desenha JPEG e SVG — nada de PNG nem background-image. Por isso o
+        // código de barras e o QR Code saem em SVG e as imagens fixas em JPEG.
+        $barcodeGenerator   = new BarcodeGeneratorSVG();
+        $codigoBarrasSvg    = $barcodeGenerator->getBarcode($matricula, $barcodeGenerator::TYPE_CODE_128, 3, 60);
+        $codigoBarrasBase64 = 'data:image/svg+xml;base64,' . base64_encode($codigoBarrasSvg);
 
         $conteudoQrCode = "MAT:{$matricula}|NOME:{$nomeCompleto}|VALIDADE:{$dataValidade}";
-        $qrCode         = new QrCode($conteudoQrCode);
-        $writer         = new PngWriter();
-        $qrCodeResult   = $writer->write($qrCode);
-        $qrCodeBase64   = base64_encode($qrCodeResult->getString());
+        $qrCodeWriter   = new QrCodeWriter(new ImageRenderer(new RendererStyle(300, 0), new SvgImageBackEnd()));
+        $qrCodeBase64   = 'data:image/svg+xml;base64,' . base64_encode($qrCodeWriter->writeString($conteudoQrCode));
 
         $fotoBase64 = $socio->getFoto();
 
-        $brasaoBase64 = $this->getBrasaoBase64();
+        $brasaoBase64    = $this->getImagemTemplate('brasao.jpg');
+        $gradienteBase64 = $this->getImagemTemplate('gradiente.jpg');
 
         $templatePath = __DIR__ . '/../templates/cartao_template.php';
 
@@ -158,18 +171,23 @@ class CartaoTradService
         return substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
     }
 
-    private function getBrasaoBase64(): string
+    /** Lê uma imagem JPEG da pasta de templates e devolve como data URI. */
+    private function getImagemTemplate(string $arquivo): string
     {
-        static $cache = null;
-
-        if ($cache === null) {
-            $path = __DIR__ . '/../templates/brasao_base64.txt';
-            if (!file_exists($path)) {
-                throw new APIException("Arquivo do brasão (base64) não encontrado!", 500);
-            }
-            $cache = trim(file_get_contents($path));
+        $path = __DIR__ . '/../templates/' . $arquivo;
+        if (!file_exists($path)) {
+            throw new APIException("Imagem do cartão não encontrada: {$arquivo}", 500);
         }
 
-        return $cache;
+        return 'data:image/jpeg;base64,' . base64_encode(file_get_contents($path));
+    }
+
+    /** JPEG começa sempre com os bytes FF D8 FF, com ou sem prefixo data URI. */
+    private function isFotoJpeg(string $foto): bool
+    {
+        $base64 = str_contains($foto, ',') ? substr($foto, strpos($foto, ',') + 1) : $foto;
+        $inicio = base64_decode(substr($base64, 0, 8), false);
+
+        return $inicio !== false && str_starts_with($inicio, "\xFF\xD8\xFF");
     }
 }
