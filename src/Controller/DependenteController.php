@@ -26,19 +26,35 @@ class DependenteController
         switch ($method) {
 
             case "GET":
-                if ($id) {
-                    $dependente = $this->dependenteService->findById((int)$id);
+        if ($id) {
+            $dependente = $this->dependenteService->findById((int)$id);
 
-                    if (!$dependente) {
-                        throw new APIException("Dependente não encontrado!", 404);
-                    }
+            if (!$dependente) {
+                throw new APIException("Dependente não encontrado!", 404);
+            }
 
-                    Response::send($dependente);
-                    return;
-                }
+            Response::send($dependente);
+            return;
+        }
 
-                Response::send($this->dependenteService->findAll());
-                break;
+        $query = $request->getQuery();
+
+        $socioTitularId = $query['socio_titular_id']
+            ?? $query['socio_id']
+            ?? null;
+
+        if ($socioTitularId) {
+            Response::send(
+                $this->dependenteService->findBySocioTitular(
+                    (int)$socioTitularId
+                )
+            );
+
+            return;
+        }
+
+        Response::send($this->dependenteService->findAll());
+        break;
 
             case "POST":
                 $data = $request->getBody();

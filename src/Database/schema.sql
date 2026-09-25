@@ -2,7 +2,7 @@ CREATE TABLE `socios` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `nome_completo` varchar(255),
   `telefone` varchar(255),
-  `cpf` varchar(255) UNIQUE,
+  `cpf` varchar(14) UNIQUE,
   `email` varchar(255),
   `foto` LONGTEXT,
   `endereco` text,
@@ -18,10 +18,15 @@ CREATE TABLE `socios` (
 CREATE TABLE `dependentes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `socio_titular_id` integer NOT NULL,
+  `status` ENUM ('Ativo','Inativo') NOT NULL DEFAULT 'Ativo',
   `nome_completo` varchar(255),
   `cpf` varchar(255),
+  `telefone` varchar(255),
   `foto` LONGTEXT,
   `data_nascimento` date,
+  `data_maioridade` DATE GENERATED ALWAYS AS (
+    DATE_ADD(data_nascimento, INTERVAL 18 YEAR)
+  ) STORED,
   `dancarino` boolean DEFAULT false
 );
 
@@ -57,6 +62,8 @@ CREATE TABLE `cartao_tradicionalista` (
   `socio_id` integer,
   `dependente_id` integer,
   `data_solicitacao` date,
+  `matricula` varchar(20),
+  `data_validade` date,
   `pago` boolean,
   `valor` decimal
 );
@@ -64,6 +71,8 @@ CREATE TABLE `cartao_tradicionalista` (
 ALTER TABLE `socios` ADD FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`);
 
 ALTER TABLE `dependentes` ADD FOREIGN KEY (`socio_titular_id`) REFERENCES `socios` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `dependentes` ADD FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`);
 
 ALTER TABLE `mensalidades` ADD FOREIGN KEY (`socio_id`) REFERENCES `socios` (`id`);
 
@@ -88,8 +97,7 @@ CREATE TABLE `usuarios` (
   `senha_hash` varchar(255) NOT NULL,
   `role` ENUM('admin','financeiro','socios','consulta') NOT NULL DEFAULT 'consulta',
   `ativo` boolean NOT NULL DEFAULT true,
-  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP,
-  KEY `idx_refresh_token_hash` (`token_hash`)
+  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE `refresh_tokens` (
@@ -98,8 +106,8 @@ CREATE TABLE `refresh_tokens` (
   `token_hash` char(64) NOT NULL,
   `expira_em` datetime NOT NULL,
   `revogado` boolean NOT NULL DEFAULT false,
-  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP
+  `criado_em` timestamp DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_refresh_token_hash` (`token_hash`)
 );
 
 ALTER TABLE `refresh_tokens` ADD FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
-

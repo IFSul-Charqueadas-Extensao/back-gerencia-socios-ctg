@@ -4,8 +4,10 @@ namespace Repository;
 
 use Database\Database;
 use Model\Dependente;
+use Util\StatusSocio;
 use PDO;
 use DateTime;
+
 
 class DependenteRepository
 {
@@ -54,14 +56,12 @@ class DependenteRepository
 
     public function create(Dependente $dependente): Dependente
     {
-        $stmt = $this->connection->prepare(
-            "INSERT INTO dependentes 
-             (socio_titular_id, nome_completo, cpf, telefone, foto, data_nascimento, dancarino) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        $stmt = $this->connection->prepare("INSERT INTO dependentes (socio_titular_id, status, nome_completo, cpf, telefone, foto, data_nascimento, dancarino) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
             $dependente->getSocioTitularId(),
+            $dependente->getStatus()->value,
             $dependente->getNomeCompleto(),
             $dependente->getCpf(),
             $dependente->getTelefone(),
@@ -78,13 +78,14 @@ class DependenteRepository
     {
         $stmt = $this->connection->prepare(
             "UPDATE dependentes SET 
-             socio_titular_id = ?, nome_completo = ?, cpf = ?, telefone = ?, foto = ?,
+             socio_titular_id = ?, status = ?, nome_completo = ?, cpf = ?, telefone = ?, foto = ?,
              data_nascimento = ?, dancarino = ?
              WHERE id = ?"
         );
 
         $stmt->execute([
             $dependente->getSocioTitularId(),
+            $dependente->getStatus()->value,
             $dependente->getNomeCompleto(),
             $dependente->getCpf(),
             $dependente->getTelefone(),
@@ -101,6 +102,40 @@ class DependenteRepository
         $stmt->execute([$id]);
     }
 
+
+    public function sincronizarMaiorIdade(): void {
+        $stmt = $this->connection->prepare(
+            "UPDATE dependentes
+            SET status = 'Inativo'
+            WHERE status = 'Ativo'
+                AND data_maioridade <= CURDATE()"
+        );
+
+        $stmt->execute();
+    }
+
+    public function atualizarStatusPorSocio(
+    int $socioTitularId,
+    StatusSocio $status
+): void {
+    if ($status === StatusSocio::ATIVO) {
+        $stmt = $this->connection->prepare(
+            "UPDATE dependentes
+             SET status = 'Ativo'
+             WHERE socio_titular_id = ?
+               AND data_maioridade > CURDATE()"
+        );
+    } else {
+        $stmt = $this->connection->prepare(
+            "UPDATE dependentes
+             SET status = 'Inativo'
+             WHERE socio_titular_id = ?"
+        );
+    }
+
+    $stmt->execute([$socioTitularId]);
+}
+
     private function mapRowToDependente(array $row): Dependente
     {
         return new Dependente(
@@ -111,7 +146,10 @@ class DependenteRepository
             dataNascimento: new DateTime($row['data_nascimento']),
             dancarino: (bool)$row['dancarino'],
             foto: $row['foto'] ?? null,
-            id: (int)$row['id']
+            id: (int)$row['id'],
+            status: isset($row['status'])
+            ? StatusSocio::from($row['status'])
+            : StatusSocio::ATIVO
         );
     }
 }

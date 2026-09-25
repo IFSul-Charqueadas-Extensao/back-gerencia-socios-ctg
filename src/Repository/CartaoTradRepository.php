@@ -36,12 +36,21 @@ class CartaoTradRepository
         return $row ? $this->mapRowToCartao($row) : null;
     }
 
+    public function findBySocioId(int $socioId): ?CartaoTrad
+    {
+        $stmt = $this->conn->prepare("SELECT * FROM cartao_tradicionalista WHERE socio_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$socioId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $this->mapRowToCartao($row) : null;
+    }
+
     public function create(CartaoTrad $cartao): CartaoTrad
     {
         $stmt = $this->conn->prepare(
             "INSERT INTO cartao_tradicionalista 
-             (socio_id, dependente_id, data_solicitacao, pago, valor) 
-             VALUES (?, ?, ?, ?, ?)"
+             (socio_id, dependente_id, data_solicitacao, pago, valor, matricula, data_validade) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
@@ -49,7 +58,9 @@ class CartaoTradRepository
             $cartao->getDependenteId(),
             $cartao->getDataSolicitacao()->format('Y-m-d'),
             $cartao->isPago() ? 1 : 0,
-            $cartao->getValor()
+            $cartao->getValor(),
+            $cartao->getMatricula(),
+            $cartao->getDataValidade()?->format('Y-m-d')
         ]);
 
         $cartao->setId((int)$this->conn->lastInsertId());
@@ -60,7 +71,8 @@ class CartaoTradRepository
     {
         $stmt = $this->conn->prepare(
             "UPDATE cartao_tradicionalista SET 
-             socio_id = ?, dependente_id = ?, data_solicitacao = ?, pago = ?, valor = ? 
+             socio_id = ?, dependente_id = ?, data_solicitacao = ?, pago = ?, valor = ?, 
+             matricula = ?, data_validade = ? 
              WHERE id = ?"
         );
 
@@ -70,6 +82,8 @@ class CartaoTradRepository
             $cartao->getDataSolicitacao()->format('Y-m-d'),
             $cartao->isPago() ? 1 : 0,
             $cartao->getValor(),
+            $cartao->getMatricula(),
+            $cartao->getDataValidade()?->format('Y-m-d'),
             $cartao->getId()
         ]);
     }
@@ -88,7 +102,9 @@ class CartaoTradRepository
             dataSolicitacao: new DateTime($row['data_solicitacao']),
             pago: (bool)$row['pago'],
             valor: (float)$row['valor'],
-            id: (int)$row['id']
+            id: (int)$row['id'],
+            matricula: $row['matricula'] ?? null,
+            dataValidade: isset($row['data_validade']) && $row['data_validade'] !== null ? new DateTime($row['data_validade']) : null
         );
     }
 }

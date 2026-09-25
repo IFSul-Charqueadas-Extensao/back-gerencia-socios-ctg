@@ -38,6 +38,11 @@ class SocioService
 
     public function update(Socio $socio): void {
         $this->socioRepository->update($socio);
+
+        (new DependenteService())->atualizarStatusPorSocio(
+            $socio->getId(),
+            $socio->getStatus()
+        );
     }
 
     public function delete(int $id): void {

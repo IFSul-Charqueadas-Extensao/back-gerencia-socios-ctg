@@ -1,70 +1,139 @@
 # ================================
-# DEPENDENTES HTTP TESTS
+# DEPENDENTES — HTTP TESTS
 # ================================
 
+@host = http://localhost:8000/api
 
-# GET / - API ENDPOINTS
-GET http://localhost:8000/api/
+# ================================
+# LOGIN ADMIN
+# ================================
 
-###
-
-# GET ALL DEPENDENTES - SUCCESS
-GET http://localhost:8000/api/dependentes
-Accept: application/json
-
-###
-
-# POST CREATE DEPENDENTE - SUCCESS
-POST http://localhost:8000/api/dependentes
+# @name loginAdmin
+POST {{host}}/auth/login
 Content-Type: application/json
 
 {
-	"socio_titular_id": 1,
-	"nome_completo": "Rafael Silva",
-	"cpf": "444.555.666-00",
-	"telefone": "(11) 94444-4444",
-	"foto": "",
-	"data_nascimento": "2018-07-20",
-	"dancarino": true
+    "email": "admin@ctg.local",
+    "senha": "admin123"
 }
 
 ###
 
-# GET DEPENDENTE SPECIFIC - SUCCESS (update with ID from POST)
-GET http://localhost:8000/api/dependentes/2
+@adminToken = {{loginAdmin.response.body.$.access_token}}
+
+# ================================
+# LISTAR DEPENDENTES
+# ================================
+
+###
+
+GET {{host}}/dependentes
+X-Auth-Token: {{adminToken}}
 Accept: application/json
 
 ###
 
-# PUT UPDATE DEPENDENTE - SUCCESS
-PUT http://localhost:8000/api/dependentes/2
+# ================================
+# CRIAR DEPENDENTE
+# ================================
+
+# @name criarDependente
+POST {{host}}/dependentes
+X-Auth-Token: {{adminToken}}
 Content-Type: application/json
 
 {
-	"socio_titular_id": 1,
-	"nome_completo": "Rafael Silva Atualizado",
-	"cpf": "444.555.666-00",
-	"telefone": "(11) 94444-4444",
-	"data_nascimento": "2018-07-20",
-	"dancarino": true
+    "socio_titular_id": 1,
+    "nome_completo": "Teste Dependente API",
+    "cpf": "999.111.222-33",
+    "telefone": "51999999999",
+    "foto": null,
+    "data_nascimento": "2015-06-15",
+    "dancarino": false
 }
 
 ###
 
-# GET UPDATED DEPENDENTE - SUCCESS
-GET http://localhost:8000/api/dependentes/2
+@dependenteId = {{criarDependente.response.body.$.id}}
+
+# ================================
+# BUSCAR DEPENDENTE POR ID
+# ================================
+
+GET {{host}}/dependentes/{{dependenteId}}
+X-Auth-Token: {{adminToken}}
 Accept: application/json
 
 ###
 
-# DELETE DEPENDENTE - SUCCESS
-DELETE http://localhost:8000/api/dependentes/2
+# ================================
+# ATUALIZAR DEPENDENTE
+# ================================
+
+PUT {{host}}/dependentes/{{dependenteId}}
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+    "socio_titular_id": 1,
+    "nome_completo": "Teste Dependente Atualizado",
+    "cpf": "999.111.222-33",
+    "telefone": "51988887777",
+    "foto": null,
+    "data_nascimento": "2015-06-15",
+    "dancarino": true
+}
+
+###
+
+# ================================
+# VERIFICAR DEPENDENTE ATUALIZADO
+# ================================
+
+GET {{host}}/dependentes/{{dependenteId}}
+X-Auth-Token: {{adminToken}}
 Accept: application/json
 
 ###
 
-# GET DELETED DEPENDENTE - NOT FOUND
-GET http://localhost:8000/api/dependentes/2
+# ================================
+# TESTE DE MAIORIDADE
+# ================================
+
+# @name criarDependenteMaioridade
+POST {{host}}/dependentes
+X-Auth-Token: {{adminToken}}
+Content-Type: application/json
+
+{
+    "socio_titular_id": 1,
+    "nome_completo": "Teste Maioridade",
+    "cpf": "999.111.222-44",
+    "telefone": "51977776666",
+    "foto": null,
+    "data_nascimento": "2000-01-01",
+    "dancarino": false
+}
+
+###
+
+
+# ================================
+# VERIFICAR DEPENDENTE MAIOR DE IDADE
+# ================================
+
+GET {{host}}/dependentes/8
+X-Auth-Token: {{adminToken}}
+Accept: application/json
+
+###
+
+# ================================
+# DEPENDENTES POR SÓCIO TITULAR
+# ================================
+
+GET {{host}}/dependentes?socio_titular_id=1
+X-Auth-Token: {{adminToken}}
 Accept: application/json
 
 ###
