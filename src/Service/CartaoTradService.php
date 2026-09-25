@@ -89,6 +89,8 @@ class CartaoTradService
 
     public function generatePdf(int $cartaoId): string
     {
+        ini_set('memory_limit', '512M'); 
+    
         $cartao = $this->cartaoRepository->findById($cartaoId);
         if (!$cartao) {
             throw new APIException("Cartão não encontrado!", 404);
