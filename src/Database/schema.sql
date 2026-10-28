@@ -18,6 +18,7 @@ CREATE TABLE `socios` (
 CREATE TABLE `dependentes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `socio_titular_id` integer NOT NULL,
+  `parentesco` ENUM ('conjuge','filho','outro') NOT NULL DEFAULT 'filho' COMMENT 'filho = filho(a)/enteado(a)',
   `status` ENUM ('Ativo','Inativo') NOT NULL DEFAULT 'Ativo',
   `nome_completo` varchar(255),
   `cpf` varchar(255),

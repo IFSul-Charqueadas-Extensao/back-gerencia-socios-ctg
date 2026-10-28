@@ -5,6 +5,7 @@ namespace Repository;
 use Database\Database;
 use Model\Dependente;
 use Util\StatusSocio;
+use Util\Parentesco;
 use PDO;
 use DateTime;
 
@@ -56,11 +57,12 @@ class DependenteRepository
 
     public function create(Dependente $dependente): Dependente
     {
-        $stmt = $this->connection->prepare("INSERT INTO dependentes (socio_titular_id, status, nome_completo, cpf, telefone, foto, data_nascimento, dancarino) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        $stmt = $this->connection->prepare("INSERT INTO dependentes (socio_titular_id, parentesco, status, nome_completo, cpf, telefone, foto, data_nascimento, dancarino) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
             $dependente->getSocioTitularId(),
+            $dependente->getParentesco()->value,
             $dependente->getStatus()->value,
             $dependente->getNomeCompleto(),
             $dependente->getCpf(),
@@ -78,13 +80,14 @@ class DependenteRepository
     {
         $stmt = $this->connection->prepare(
             "UPDATE dependentes SET 
-             socio_titular_id = ?, status = ?, nome_completo = ?, cpf = ?, telefone = ?, foto = ?,
+             socio_titular_id = ?, parentesco = ?, status = ?, nome_completo = ?, cpf = ?, telefone = ?, foto = ?,
              data_nascimento = ?, dancarino = ?
              WHERE id = ?"
         );
 
         $stmt->execute([
             $dependente->getSocioTitularId(),
+            $dependente->getParentesco()->value,
             $dependente->getStatus()->value,
             $dependente->getNomeCompleto(),
             $dependente->getCpf(),
@@ -108,6 +111,7 @@ class DependenteRepository
             "UPDATE dependentes
             SET status = 'Inativo'
             WHERE status = 'Ativo'
+                AND parentesco <> 'conjuge'
                 AND data_maioridade <= CURDATE()"
         );
 
@@ -123,7 +127,7 @@ class DependenteRepository
             "UPDATE dependentes
              SET status = 'Ativo'
              WHERE socio_titular_id = ?
-               AND data_maioridade > CURDATE()"
+               AND (data_maioridade > CURDATE() OR parentesco = 'conjuge')"
         );
     } else {
         $stmt = $this->connection->prepare(
@@ -135,6 +139,19 @@ class DependenteRepository
 
     $stmt->execute([$socioTitularId]);
 }
+
+    public function existeConjuge(int $socioTitularId, ?int $ignorarId = null): bool
+    {
+        $stmt = $this->connection->prepare(
+            "SELECT COUNT(*) FROM dependentes
+             WHERE socio_titular_id = ?
+               AND parentesco = 'conjuge'
+               AND id <> ?"
+        );
+        $stmt->execute([$socioTitularId, $ignorarId ?? 0]);
+
+        return (int)$stmt->fetchColumn() > 0;
+    }
 
     private function mapRowToDependente(array $row): Dependente
     {
@@ -149,7 +166,8 @@ class DependenteRepository
             id: (int)$row['id'],
             status: isset($row['status'])
             ? StatusSocio::from($row['status'])
-            : StatusSocio::ATIVO
+            : StatusSocio::ATIVO,
+            parentesco: Parentesco::tryFrom($row['parentesco'] ?? '') ?? Parentesco::FILHO
         );
     }
 }

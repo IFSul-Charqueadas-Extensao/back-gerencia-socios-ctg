@@ -5,6 +5,7 @@ namespace Model;
 use DateTime;
 use JsonSerializable;
 use Util\StatusSocio;
+use Util\Parentesco;
 
 class Dependente implements JsonSerializable {
 
@@ -17,6 +18,7 @@ class Dependente implements JsonSerializable {
     private DateTime $dataNascimento;
     private bool $dancarino;
     private StatusSocio $status;
+    private Parentesco $parentesco;
 
     public function __construct(
         int $socioTitularId,
@@ -27,7 +29,8 @@ class Dependente implements JsonSerializable {
         bool $dancarino,
         ?string $foto = null,
         ?int $id = null,
-        StatusSocio $status = StatusSocio::ATIVO
+        StatusSocio $status = StatusSocio::ATIVO,
+        Parentesco $parentesco = Parentesco::FILHO
     ) {
         $this->id = $id;
         $this->socioTitularId = $socioTitularId;
@@ -38,6 +41,7 @@ class Dependente implements JsonSerializable {
         $this->dataNascimento = $dataNascimento;
         $this->dancarino = $dancarino;
         $this->status = $status;
+        $this->parentesco = $parentesco;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -54,6 +58,14 @@ class Dependente implements JsonSerializable {
     public function getDataMaiorIdade(): DateTime { $data = clone $this->dataNascimento; $data->modify('+18 years'); return $data; }
     public function IsMaiorDeIdade(?DateTime $referencia = null): bool { $referencia ??= new DateTime(); return $this->getDataMaiorIdade() <= $referencia; }
 
+    public function getParentesco(): Parentesco { return $this->parentesco; }
+    public function isConjuge(): bool { return $this->parentesco === Parentesco::CONJUGE; }
+
+    // Cônjuge continua dependente mesmo depois dos 18 anos
+    public function perdeDependenciaPorIdade(?DateTime $referencia = null): bool {
+        return !$this->isConjuge() && $this->IsMaiorDeIdade($referencia);
+    }
+
     public function jsonSerialize(): array {
         return [
             'id' => $this->id,
@@ -63,7 +75,9 @@ class Dependente implements JsonSerializable {
             'telefone' => $this->telefone,
             'foto' => $this->foto,
             'data_nascimento' => $this->dataNascimento->format('Y-m-d'),
-            'data_maioridade' => $this->getDataMaioridade()->format('Y-m-d'),
+            // cônjuge não tem data de maioridade, porque não perde a dependência
+            'data_maioridade' => $this->isConjuge() ? null : $this->getDataMaioridade()->format('Y-m-d'),
+            'parentesco' => $this->parentesco->value,
             'dancarino' => $this->dancarino,
             'status' => $this->status->value
         ];
