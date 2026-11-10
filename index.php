@@ -26,6 +26,7 @@ use Controller\CartaoTradController;
 use Controller\AuthController;
 use Controller\UsuarioController;
 use Controller\VendaCopaController;
+use Controller\GestaoRecursoController;
 use Http\Autenticacao;
 use Http\Request;
 use Http\Response;
@@ -64,6 +65,10 @@ switch ($request->getResource()) { //conforme o recurso solicitado
     case 'copa':
         $vendaCopaController = new VendaCopaController();
         $vendaCopaController->processRequest($request);
+        break;
+    case 'gestao-recursos':
+        $gestaoRecursoController = new GestaoRecursoController();
+        $gestaoRecursoController->processRequest($request);
         break;
     case 'pagamentos':
         // rotas para /pagamentos
@@ -152,7 +157,12 @@ switch ($request->getResource()) { //conforme o recurso solicitado
             "GET /api/copa/:id",
             "POST /api/copa",
             "PUT /api/copa/:id",
-            "DELETE /api/copa/:id"
+            "DELETE /api/copa/:id",
+            "GET /api/gestao-recursos",
+            "GET /api/gestao-recursos/:id",
+            "POST /api/gestao-recursos",
+            "PUT /api/gestao-recursos/:id",
+            "DELETE /api/gestao-recursos/:id"
         ];
         Response::send(["endpoints" => $endpoints]);
         break;
