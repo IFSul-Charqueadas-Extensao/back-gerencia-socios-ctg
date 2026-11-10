@@ -1,0 +1,42 @@
+# ================================
+# VERIFICAÇÃO PÚBLICA DE ADIMPLÊNCIA — HTTP TESTS
+# ================================
+#
+# Rota PÚBLICA (não precisa de token). POST para o CPF não ficar na URL.
+# Limite: 10 consultas por minuto por IP (acima disso, 429).
+# Resposta mínima: primeiro nome, adimplente e "em_dia_ate" (AAAA-MM).
+#
+# Teste automatizado equivalente (cobre todos os casos + 429 + 401 nas outras rotas):
+#   php tests/verificacao_adimplencia.php
+
+@baseUrl = http://localhost:8000/api
+
+### CPF de sócio (com máscara) — dados do seed: João Silva
+POST {{baseUrl}}/verificacao
+Content-Type: application/json
+
+{ "cpf": "476.457.130-70" }
+
+### Mesmo CPF sem máscara
+POST {{baseUrl}}/verificacao
+Content-Type: application/json
+
+{ "cpf": "47645713070" }
+
+### CPF válido que não é de sócio -> 200 {"encontrado": false}
+POST {{baseUrl}}/verificacao
+Content-Type: application/json
+
+{ "cpf": "168.995.350-09" }
+
+### CPF inválido (dígito verificador errado) -> 400
+POST {{baseUrl}}/verificacao
+Content-Type: application/json
+
+{ "cpf": "476.457.130-71" }
+
+### Método errado -> 405
+GET {{baseUrl}}/verificacao
+
+### Golden: as demais rotas continuam fechadas -> 401
+GET {{baseUrl}}/socios
