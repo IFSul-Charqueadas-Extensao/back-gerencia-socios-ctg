@@ -8,6 +8,7 @@ CREATE TABLE `socios` (
   `endereco` text,
   `data_nascimento` date,
   `data_entrada` date,
+  `data_desligamento` date NULL DEFAULT NULL,
   `categoria_id` integer,
   `status` ENUM ('Ativo', 'Inativo') DEFAULT 'Ativo',
   `dancarino` boolean DEFAULT false,
@@ -18,6 +19,7 @@ CREATE TABLE `socios` (
 CREATE TABLE `dependentes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `socio_titular_id` integer NOT NULL,
+  `parentesco` ENUM ('conjuge','filho','outro') NOT NULL DEFAULT 'filho' COMMENT 'filho = filho(a)/enteado(a)',
   `status` ENUM ('Ativo','Inativo') NOT NULL DEFAULT 'Ativo',
   `nome_completo` varchar(255),
   `cpf` varchar(255),

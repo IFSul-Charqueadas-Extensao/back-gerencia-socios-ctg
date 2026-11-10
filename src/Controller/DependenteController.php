@@ -8,6 +8,7 @@ use Http\Response;
 use Model\Dependente;
 use Service\DependenteService;
 use DateTime;
+use Util\Parentesco;
 
 class DependenteController
 {
@@ -66,7 +67,8 @@ class DependenteController
                     telefone: $data['telefone'],
                     dataNascimento: new DateTime($data['data_nascimento']),
                     dancarino: (bool)$data['dancarino'],
-                    foto: $data['foto'] ?? null
+                    foto: $data['foto'] ?? null,
+                    parentesco: Parentesco::tryFrom($data['parentesco'] ?? '') ?? Parentesco::FILHO
                 );
 
                 $created = $this->dependenteService->create($dependente);
@@ -89,7 +91,8 @@ class DependenteController
                     dataNascimento: new DateTime($data['data_nascimento']),
                     dancarino: (bool)$data['dancarino'],
                     foto: $data['foto'] ?? null,
-                    id: (int)$id
+                    id: (int)$id,
+                    parentesco: Parentesco::tryFrom($data['parentesco'] ?? '') ?? Parentesco::FILHO
                 );
 
                 $this->dependenteService->update($dependente);

@@ -25,6 +25,7 @@ use Controller\DependenteController;
 use Controller\CartaoTradController;
 use Controller\AuthController;
 use Controller\UsuarioController;
+use Controller\VendaCopaController;
 use Http\Autenticacao;
 use Http\Request;
 use Http\Response;
@@ -59,6 +60,10 @@ switch ($request->getResource()) { //conforme o recurso solicitado
         // rotas para /mensalidades
         $mensalidadeController = new MensalidadeController();
         $mensalidadeController->processRequest($request);
+        break;
+    case 'copa':
+        $vendaCopaController = new VendaCopaController();
+        $vendaCopaController->processRequest($request);
         break;
     case 'pagamentos':
         // rotas para /pagamentos
@@ -142,7 +147,12 @@ switch ($request->getResource()) { //conforme o recurso solicitado
             "GET /api/cartao-tradicionalista/:id",
             "POST /api/cartao-tradicionalista",
             "PUT /api/cartao-tradicionalista/:id",
-            "DELETE /api/cartao-tradicionalista/:id"
+            "DELETE /api/cartao-tradicionalista/:id",
+            "GET /api/copa",
+            "GET /api/copa/:id",
+            "POST /api/copa",
+            "PUT /api/copa/:id",
+            "DELETE /api/copa/:id"
         ];
         Response::send(["endpoints" => $endpoints]);
         break;

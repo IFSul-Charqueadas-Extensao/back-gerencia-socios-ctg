@@ -19,6 +19,7 @@ class Socio implements JsonSerializable {
     private DateTime $dataNascimento;
     private DateTime $dataEntrada;
     private StatusSocio $status;
+    private ?DateTime $dataDesligamento;
 
     private CategoriaSocio $categoria;
     private bool $dancarino;
@@ -42,7 +43,8 @@ class Socio implements JsonSerializable {
         CategoriaSocio $categoria,
         bool $dancarino,
         bool $pagaInstrutor,
-        ?int $id = null
+        ?int $id = null,
+        ?DateTime $dataDesligamento = null
     ){
         $this->id = $id;
         $this->nome = $nome;
@@ -57,6 +59,7 @@ class Socio implements JsonSerializable {
         $this->categoria = $categoria;
         $this->dancarino = $dancarino;
         $this->pagaInstrutor = $pagaInstrutor;
+        $this->dataDesligamento = $dataDesligamento;
     }
 
 
@@ -101,6 +104,10 @@ class Socio implements JsonSerializable {
 
     public function getStatus(): StatusSocio {
         return $this->status;
+    }
+
+    public function getDataDesligamento(): ?DateTime {
+        return $this->dataDesligamento;
     }
 
     public function getCategoria(): CategoriaSocio {
@@ -178,6 +185,7 @@ class Socio implements JsonSerializable {
             'endereco' => $this->endereco, // já serializa automático
             'data_nascimento' => $this->dataNascimento->format('Y-m-d'),
             'data_entrada' => $this->dataEntrada->format('Y-m-d'),
+            'data_desligamento' => $this->dataDesligamento?->format('Y-m-d'),
             'status' => $this->status->value,
             'categoria' => $this->categoria->value,
             'dancarino' => $this->dancarino,

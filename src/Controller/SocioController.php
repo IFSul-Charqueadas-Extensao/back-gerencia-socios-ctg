@@ -108,7 +108,8 @@ class SocioController{
                     CategoriaSocio::from($data['categoria']),
                     (bool)$data['dancarino'],
                     (bool)$data['paga_instrutor'],
-                    (int)$id
+                    (int)$id,
+                    !empty($data['data_desligamento']) ? new DateTime($data['data_desligamento']) : null
                 );
 
                 if (isset($data['cartao_trad_id'])) {

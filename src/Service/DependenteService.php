@@ -41,6 +41,7 @@ class DependenteService
 
     public function create(Dependente $dependente): Dependente
     {
+        $this->validarConjuge($dependente);
         $dependente->setStatus($this->statusEfetivo($dependente));
 
         return $this->dependenteRepository->create($dependente);
@@ -48,6 +49,7 @@ class DependenteService
 
     public function update(Dependente $dependente): void
     {
+        $this->validarConjuge($dependente);
         $dependente->setStatus($this->statusEfetivo($dependente));
 
         $this->dependenteRepository->update($dependente);
@@ -68,7 +70,7 @@ class DependenteService
 
     private function statusEfetivo(Dependente $dependente): StatusSocio
     {
-        if($dependente->IsMaiorDeIdade()){
+        if($dependente->perdeDependenciaPorIdade()){
             return StatusSocio::INATIVO;
         }
 
@@ -81,5 +83,22 @@ class DependenteService
             );
         }
         return $socio->getStatus();
+    }
+
+    // Um sócio só pode ter um cônjuge cadastrado como dependente
+    private function validarConjuge(Dependente $dependente): void
+    {
+        if (
+            $dependente->isConjuge() &&
+            $this->dependenteRepository->existeConjuge(
+                $dependente->getSocioTitularId(),
+                $dependente->getId()
+            )
+        ) {
+            throw new APIException(
+                "Este sócio já possui um cônjuge cadastrado como dependente!",
+                400
+            );
+        }
     }
 }
