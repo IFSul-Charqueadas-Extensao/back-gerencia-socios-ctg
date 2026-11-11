@@ -27,6 +27,7 @@ use Controller\AuthController;
 use Controller\UsuarioController;
 use Controller\VendaCopaController;
 use Controller\GestaoRecursoController;
+use Controller\VerificacaoController;
 use Http\Autenticacao;
 use Http\Request;
 use Http\Response;
@@ -100,6 +101,11 @@ switch ($request->getResource()) { //conforme o recurso solicitado
         $authController = new AuthController();
         $authController->processRequest($request);
         break;
+    case 'verificacao':
+        // rota PÚBLICA: verificação de adimplência por CPF (POST)
+        $verificacaoController = new VerificacaoController();
+        $verificacaoController->processRequest($request);
+        break;
     case 'usuarios':
         // rotas para /usuarios (somente admin)
         $usuarioController = new UsuarioController();
@@ -111,6 +117,7 @@ switch ($request->getResource()) { //conforme o recurso solicitado
             "POST /api/auth/login",
             "POST /api/auth/refresh",
             "POST /api/auth/logout",
+            "POST /api/verificacao (pública, sem token)",
             "GET /api/auth/me",
             "GET /api/usuarios",
             "GET /api/usuarios/:id",

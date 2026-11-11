@@ -112,3 +112,17 @@ CREATE TABLE `refresh_tokens` (
 );
 
 ALTER TABLE `refresh_tokens` ADD FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+
+-- ============================================================
+-- Rate limit da verificação pública de adimplência
+-- (mesma tabela de src/Database/migrations/007_verificacao_tentativas.sql,
+--  aqui para instalações do zero)
+-- ============================================================
+
+CREATE TABLE `verificacao_tentativas` (
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
+  `ip_hash` char(64) NOT NULL,
+  `tentativa_em` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_verificacao_ip_data` (`ip_hash`, `tentativa_em`)
+);

@@ -24,6 +24,10 @@ class Autenticacao
         'auth/login',
         'auth/refresh',
         'auth/logout',
+        //verificação pública de adimplência (o sócio consulta o próprio CPF).
+        //só 'verificacao' exato (sem id/subrota); o controller aceita apenas POST
+        //e a proteção contra enumeração é o rate limit por IP do VerificacaoService
+        'verificacao/',
     ];
 
     //usuário já identificado nesta requisição.
