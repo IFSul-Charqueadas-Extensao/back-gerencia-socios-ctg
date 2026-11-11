@@ -26,6 +26,8 @@ use Controller\CartaoTradController;
 use Controller\AuthController;
 use Controller\UsuarioController;
 use Controller\VendaCopaController;
+use Controller\GestaoRecursoController;
+use Controller\VerificacaoController;
 use Http\Autenticacao;
 use Http\Request;
 use Http\Response;
@@ -65,6 +67,10 @@ switch ($request->getResource()) { //conforme o recurso solicitado
         $vendaCopaController = new VendaCopaController();
         $vendaCopaController->processRequest($request);
         break;
+    case 'gestao-recursos':
+        $gestaoRecursoController = new GestaoRecursoController();
+        $gestaoRecursoController->processRequest($request);
+        break;
     case 'pagamentos':
         // rotas para /pagamentos
         $pagamentoController = new PagamentoController();
@@ -95,6 +101,11 @@ switch ($request->getResource()) { //conforme o recurso solicitado
         $authController = new AuthController();
         $authController->processRequest($request);
         break;
+    case 'verificacao':
+        // rota PÚBLICA: verificação de adimplência por CPF (POST)
+        $verificacaoController = new VerificacaoController();
+        $verificacaoController->processRequest($request);
+        break;
     case 'usuarios':
         // rotas para /usuarios (somente admin)
         $usuarioController = new UsuarioController();
@@ -106,6 +117,7 @@ switch ($request->getResource()) { //conforme o recurso solicitado
             "POST /api/auth/login",
             "POST /api/auth/refresh",
             "POST /api/auth/logout",
+            "POST /api/verificacao (pública, sem token)",
             "GET /api/auth/me",
             "GET /api/usuarios",
             "GET /api/usuarios/:id",
@@ -152,7 +164,12 @@ switch ($request->getResource()) { //conforme o recurso solicitado
             "GET /api/copa/:id",
             "POST /api/copa",
             "PUT /api/copa/:id",
-            "DELETE /api/copa/:id"
+            "DELETE /api/copa/:id",
+            "GET /api/gestao-recursos",
+            "GET /api/gestao-recursos/:id",
+            "POST /api/gestao-recursos",
+            "PUT /api/gestao-recursos/:id",
+            "DELETE /api/gestao-recursos/:id"
         ];
         Response::send(["endpoints" => $endpoints]);
         break;

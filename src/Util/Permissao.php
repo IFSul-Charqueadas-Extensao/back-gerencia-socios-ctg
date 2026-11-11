@@ -27,6 +27,7 @@ class Permissao
             'pagamentos',
             'usuarios',
             'copa',
+            'gestao-recursos',
         ],
         //secretaria: cuida do cadastro dos sócios
         'socios' => [
@@ -40,6 +41,7 @@ class Permissao
             'mensalidades',
             'pagamentos',
             'copa',
+            'gestao-recursos',
         ],
         //somente visualização
         'consulta' => [],
