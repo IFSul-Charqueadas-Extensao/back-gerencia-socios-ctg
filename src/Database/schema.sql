@@ -8,6 +8,7 @@ CREATE TABLE `socios` (
   `endereco` text,
   `data_nascimento` date,
   `data_entrada` date,
+  `data_desligamento` date NULL DEFAULT NULL,
   `categoria_id` integer,
   `status` ENUM ('Ativo', 'Inativo') DEFAULT 'Ativo',
   `dancarino` boolean DEFAULT false,

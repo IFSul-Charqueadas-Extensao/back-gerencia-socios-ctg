@@ -153,6 +153,7 @@ class SocioRepository
                 data_nascimento = :data_nascimento,
                 data_entrada = :data_entrada,
                 categoria_id = :categoria_id,
+                data_desligamento = :data_desligamento,
                 status = :status,
                 dancarino = :dancarino,
                 paga_instrutor = :paga_instrutor,
@@ -171,6 +172,7 @@ class SocioRepository
             ':data_nascimento' => $socio->getDataNascimento()->format('Y-m-d'),
             ':data_entrada' => $socio->getDataEntrada()->format('Y-m-d'),
             ':categoria_id' => $socio->getCategoria()->value,
+            ':data_desligamento' => $socio->getDataDesligamento()?->format('Y-m-d'),
             ':status' => $socio->getStatus()->value,
             ':dancarino' => $socio->isDancarino() ? 1 : 0,
             ':paga_instrutor' => $socio->isPagaInstrutor() ? 1 : 0,
@@ -201,7 +203,8 @@ class SocioRepository
             CategoriaSocio::from((string)$row['categoria_id']),
             (bool)$row['dancarino'],
             (bool)$row['paga_instrutor'],
-            (int)$row['id']
+            (int)$row['id'],
+            !empty($row['data_desligamento']) ? new DateTime($row['data_desligamento']) : null
         );
 
         if (!empty($row['cartao_trad_id'])) {
